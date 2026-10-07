@@ -126,6 +126,133 @@ function parseCountryCsv(text) {
     return out;
 }
 
+var FIELD_HELP = {
+    'Enable service': 'Starts Opera Proxy automatically through procd. Disable this only when you want the package installed but the proxy stopped.',
+    'Country': 'Preferred Opera VPN region. This influences which SurfEasy/Opera exit pool is requested. EU is the safest general default.',
+    'SOCKS5 mode': 'Enabled: listen as SOCKS5. Disabled: listen as HTTP proxy. SOCKS5 is usually preferable for applications that support remote DNS through the proxy.',
+    'Listen address': 'Local address and port exposed by opera-proxy, for example 127.0.0.1:18080. Keep 127.0.0.1 unless LAN clients must connect directly.',
+    'Verbosity': 'Log detail level passed to the binary. Higher values produce more diagnostic output and more log noise.',
+    'Request timeout': 'Maximum time for API and proxy operations before they are treated as failed. Increase only on very slow or unstable links.',
+    'Endpoint refresh interval': 'How often Opera proxy endpoints are rediscovered. Shorter values refresh more often but create more API traffic.',
+    'Server selection': 'How a working Opera endpoint is chosen: fastest probes candidates, random spreads choices, first uses the first usable endpoint.',
+    'Bootstrap DNS': 'Resolver used while bootstrapping SurfEasy/Opera API access. DoT and DoH can help when local DNS is filtered or poisoned.',
+    'Upstream proxy': 'Optional proxy used for Opera tunnel traffic itself. Leave empty for a direct connection to selected Opera endpoints.',
+    'API proxy': 'Optional explicit proxy used only for SurfEasy/Opera API registration and discovery. Useful when the API is blocked but tunnel endpoints are reachable.',
+    'Automatic community API fallback': 'If direct API access fails, automatically fetch public proxy lists and try API registration through them. No RouterRich MAC/vendor gate is used.',
+    'Fallback parallelism': 'Number of community API proxy candidates tested concurrently. Larger values are faster but consume more RAM, sockets and bandwidth.',
+    'Fallback candidate limit': 'Maximum number of community proxy candidates considered in one fallback round. Lower this on low-RAM routers.',
+    'API proxy list file': 'Optional local text file with extra HTTP/SOCKS proxies used for API fallback, one proxy per line.',
+    'API proxy list URL': 'Optional remote list of extra proxy candidates for API fallback. Leave empty unless you maintain or trust a specific list.',
+    'Go memory soft limit (MiB)': 'Soft memory target for the Go runtime. 0 disables it. On old MIPS routers a moderate limit can reduce memory pressure.',
+    'Tunnel idle timeout': 'Closes tunnels that stay inactive for this duration. 0 disables the timeout. Useful to reclaim stale connections on small routers.',
+    'CA file': 'Custom CA bundle used for TLS verification. Usually leave empty to use the system CA bundle.',
+    'Fake SNI': 'Advanced compatibility override for the API TLS bootstrap path. Leave empty unless you know the exact workaround you need.',
+    'Override proxy address': 'Forces a specific Opera upstream endpoint instead of discovered addresses. Diagnostic/advanced option; normally leave empty.',
+    'Browser profile preset': 'Convenience preset for the Opera/Chrome identity sent to the SurfEasy API. It fills the three identity fields below.',
+    'Client version': 'Opera client version string reported to the SurfEasy API. Leave empty to use the binary default.',
+    'Client type': 'SurfEasy client type identifier, normally se0316. Change only when testing API compatibility.',
+    'User-Agent string': 'Browser User-Agent sent to SurfEasy. Leave empty to use the binary default or select a preset above.',
+    'Runtime state': 'Live process status, memory use, selected country, listener and browser identity. Refreshed automatically.',
+    'Actions': 'Start, stop or restart the service, or run the five-service connectivity test through the current proxy.',
+    'Live log output': 'Recent opera-proxy messages from logread. Use this when discovery, fallback or upstream TLS fails.'
+};
+
+var SECTION_HELP = {
+    'Live Status': 'Current process state and quick service controls. This section contains no persistent settings.',
+    'Configuration': 'Main runtime and resilience settings. Most users only need country, proxy mode and listen address.',
+    'Browser Identity (Spoofing)': 'SurfEasy/Opera API client identity overrides. Keep the defaults unless a server-side compatibility change requires another profile.',
+    'Diagnostics': 'On-demand connectivity tests and logs. Safe to keep collapsed during normal operation.'
+};
+
+function decorateHelp(root) {
+    root.querySelectorAll('.cbi-value').forEach(function(row) {
+        var title = row.querySelector('.cbi-value-title');
+        if (!title || title.querySelector('.opera-help'))
+            return;
+        var key = String(title.textContent || '').trim();
+        var help = FIELD_HELP[key];
+        if (!help)
+            return;
+        title.appendChild(E('span', {
+            'class': 'opera-help',
+            'data-tooltip': help,
+            'title': help,
+            'tabindex': '0',
+            'aria-label': help,
+            'style': 'display:inline-flex;align-items:center;justify-content:center;margin-left:.45em;width:1.25em;height:1.25em;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:50%;font-size:.78em;font-weight:700;cursor:help;color:var(--primary-color-high,#1976d2);vertical-align:middle'
+        }, '?'));
+    });
+}
+
+function makeSectionsCollapsible(root) {
+    var stateKey = 'opera-proxy-section-state-v1';
+    var saved = {};
+    try { saved = JSON.parse(window.localStorage.getItem(stateKey) || '{}') || {}; } catch (e) {}
+
+    root.querySelectorAll('.cbi-section').forEach(function(section) {
+        var heading = section.querySelector(':scope > h3, :scope > h4');
+        if (!heading)
+            return;
+        var name = String(heading.textContent || '').trim();
+        if (!SECTION_HELP[name] || heading.dataset.operaCollapsible === '1')
+            return;
+
+        heading.dataset.operaCollapsible = '1';
+        heading.style.cursor = 'pointer';
+        heading.style.userSelect = 'none';
+        heading.style.display = 'flex';
+        heading.style.alignItems = 'center';
+        heading.style.gap = '.45em';
+        heading.setAttribute('role', 'button');
+        heading.setAttribute('tabindex', '0');
+
+        var info = E('span', {
+            'class': 'opera-help',
+            'data-tooltip': SECTION_HELP[name],
+            'title': SECTION_HELP[name],
+            'tabindex': '0',
+            'aria-label': SECTION_HELP[name],
+            'style': 'display:inline-flex;align-items:center;justify-content:center;width:1.25em;height:1.25em;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:50%;font-size:.72em;font-weight:700;color:var(--primary-color-high,#1976d2);cursor:help'
+        }, '?');
+
+        var chevron = E('span', {
+            'style': 'margin-left:auto;font-size:.9em;color:var(--text-color-medium,#6b7280)'
+        }, '▾');
+
+        heading.appendChild(info);
+        heading.appendChild(chevron);
+
+        var body = Array.prototype.filter.call(section.children, function(el) { return el !== heading; });
+        var defaultOpen = (name === 'Live Status');
+        var open = Object.prototype.hasOwnProperty.call(saved, name) ? !!saved[name] : defaultOpen;
+
+        function apply() {
+            body.forEach(function(el) { el.style.display = open ? '' : 'none'; });
+            chevron.textContent = open ? '▾' : '▸';
+            heading.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function toggle(ev) {
+            if (ev && ev.target && ev.target.classList && ev.target.classList.contains('opera-help'))
+                return;
+            open = !open;
+            saved[name] = open;
+            try { window.localStorage.setItem(stateKey, JSON.stringify(saved)); } catch (e) {}
+            apply();
+        }
+
+        heading.addEventListener('click', toggle);
+        heading.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                toggle(ev);
+            }
+        });
+        info.addEventListener('click', function(ev) { ev.stopPropagation(); });
+        apply();
+    });
+}
+
 // ─── View ─────────────────────────────────────────────────────────────
 return view.extend({
     _statusNode:     null,
@@ -581,6 +708,9 @@ return view.extend({
             self._actionNode = nodes.querySelector('[data-opera-action-state="1"]');
             self._logNode    = nodes.querySelector('[data-opera-logs="1"]');
             self._buttons    = [btnStart, btnStop, btnRestart, btnTest];
+
+            decorateHelp(nodes);
+            makeSectionsCollapsible(nodes);
 
             if (btnStart)   btnStart.addEventListener('click',   self.handleServiceAction('start'));
             if (btnStop)    btnStop.addEventListener('click',    self.handleServiceAction('stop'));
