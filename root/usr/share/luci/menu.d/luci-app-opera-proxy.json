@@ -1,0 +1,13 @@
+{
+  "admin/services/opera-proxy": {
+    "title": "Opera Proxy",
+    "order": 90,
+    "action": {
+      "type": "view",
+      "path": "opera-proxy/config"
+    },
+    "depends": {
+      "acl": [ "luci-app-opera-proxy" ]
+    }
+  }
+}
