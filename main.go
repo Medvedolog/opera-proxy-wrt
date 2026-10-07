@@ -1149,33 +1149,54 @@ func run() int {
 	})
 
 	mainLogger.Info("Starting proxy server...")
-	errChan := make(chan error, 1)
+	serveErr := make(chan error, 1)
+	var shutdown func(context.Context) error
+
 	if args.socksMode {
-		socks, initError := handler.NewSocksServer(handlerDialer, socksLogger)
+		socks, initError := handler.NewSocksServer(handlerDialer, socksLogger, args.idleTimeout)
 		if initError != nil {
-			mainLogger.Critical("Failed to start: %v", initError)
+			mainLogger.Critical("Failed to start SOCKS server: %v", initError)
 			return 16
 		}
+		ln, listenErr := net.Listen("tcp", args.bindAddress)
+		if listenErr != nil {
+			mainLogger.Critical("Failed to listen on %s: %v", args.bindAddress, listenErr)
+			return 16
+		}
+		shutdown = func(context.Context) error { return ln.Close() }
 		mainLogger.Info("Init complete.")
-		go func() {
-			errChan <- socks.ListenAndServe("tcp", args.bindAddress)
-		}()
+		go func() { serveErr <- socks.Serve(ln) }()
 	} else {
-		h := handler.NewProxyHandler(handlerDialer, proxyLogger)
+		h := handler.NewProxyHandler(handlerDialer, proxyLogger, args.idleTimeout)
+		srv := &http.Server{
+			Addr:              args.bindAddress,
+			Handler:           h,
+			ReadHeaderTimeout: 20 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    1 << 16,
+		}
+		shutdown = srv.Shutdown
 		mainLogger.Info("Init complete.")
-		go func() {
-			errChan <- http.ListenAndServe(args.bindAddress, h)
-		}()
+		go func() { serveErr <- srv.ListenAndServe() }()
 	}
 
 	select {
 	case <-rootCtx.Done():
-		mainLogger.Info("Server terminated with a reason: %v", context.Cause(rootCtx))
-	case err = <-errChan:
-		mainLogger.Critical("Server terminated with a fatal error: %v", err)
+		rootCancel()
+		mainLogger.Info("Shutdown signal received; stopping listener.")
+		shCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdown(shCtx); err != nil {
+			mainLogger.Warning("Listener shutdown returned: %v", err)
+		}
+		return 0
+	case err = <-serveErr:
+		if err != nil && err != http.ErrServerClosed {
+			mainLogger.Critical("Server terminated with a reason: %v", err)
+			return 13
+		}
+		return 0
 	}
-	mainLogger.Info("Shutting down...")
-	return 0
 }
 
 func printCountryList(list []se.SEGeoEntry) int {
