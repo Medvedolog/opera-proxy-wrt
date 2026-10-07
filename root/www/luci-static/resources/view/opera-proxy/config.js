@@ -105,7 +105,7 @@ function escapeHtml(s) {
 }
 
 function badge(label, color) {
-    return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;color:#fff;background:' +
+    return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;color:var(--on-primary-color,#fff);background:' +
         color + '">' + escapeHtml(label) + '</span>';
 }
 
@@ -219,7 +219,7 @@ return view.extend({
             this._statusNode.innerHTML = this.renderStatusHtml(rt);
         }, this)).catch(L.bind(function(err) {
             this._statusNode.innerHTML =
-                '<div style="color:#b91c1c"><strong>Status read failed:</strong> ' +
+                '<div style="color:var(--error-color-medium,#b91c1c)"><strong>Status read failed:</strong> ' +
                 escapeHtml((err && err.message) || 'unknown error') + '</div>';
         }, this));
     },
@@ -308,7 +308,7 @@ return view.extend({
                             detail = 'HTTP ' + r.code + ', ' + r.ms + ' ms';
 
                         return E('li', {
-                            'style': 'margin:.25em 0;color:' + (good ? '#15803d' : (partial ? '#a16207' : '#b91c1c'))
+                            'style': 'margin:.25em 0;color:' + (good ? 'var(--success-color-medium,#15803d)' : (partial ? 'var(--warn-color-high,#a16207)' : 'var(--error-color-medium,#b91c1c)'))
                         }, [ mark + ' ', E('strong', {}, r.name), ' — ' + detail ]);
                     });
 
@@ -379,7 +379,7 @@ return view.extend({
                 return Promise.resolve(_render.apply(this, arguments)).then(function(node) {
                     if (node) {
                         node.setAttribute('data-browser-field', opt);
-                        node.style.borderLeft  = '3px solid #93c5fd';
+                        node.style.borderLeft  = '3px solid var(--primary-color-high,#93c5fd)';
                         node.style.paddingLeft = '8px';
                         node.style.marginLeft  = '4px';
                     }
@@ -562,7 +562,7 @@ return view.extend({
                 '<summary style="cursor:pointer;font-weight:600">Show opera-proxy logs</summary>',
                 '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">',
                 '<button type="button" class="btn cbi-button cbi-button-action" data-opera-refresh-logs="1">Refresh logs</button>',
-                '<span style="color:#6b7280">Runs: logread -e opera-proxy</span>',
+                '<span style="color:var(--text-color-medium,#6b7280)">Runs: logread -e opera-proxy</span>',
                 '</div>',
                 '<textarea data-opera-logs="1" readonly="readonly" wrap="off" style="margin-top:10px;width:100%;min-height:220px;font-family:monospace;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit);border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:8px;padding:10px"></textarea>',
                 '</details>'
