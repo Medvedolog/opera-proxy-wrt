@@ -48,6 +48,7 @@ type ProxyDialer struct {
 	auth          stringCb
 	next          ContextDialer
 	caPool        *x509.CertPool
+	sessionCache  tls.ClientSessionCache
 }
 
 func NewProxyDialer(address, tlsServerName, fakeSNI, auth stringCb, caPool *x509.CertPool, nextDialer ContextDialer) *ProxyDialer {
@@ -58,6 +59,7 @@ func NewProxyDialer(address, tlsServerName, fakeSNI, auth stringCb, caPool *x509
 		auth:          auth,
 		next:          nextDialer,
 		caPool:        caPool,
+		sessionCache:  tls.NewLRUClientSessionCache(0),
 	}
 }
 
@@ -112,6 +114,12 @@ func (d *ProxyDialer) DialContext(ctx context.Context, network, address string) 
 	if err != nil {
 		return nil, err
 	}
+	success := false
+	defer func() {
+		if !success {
+			_ = conn.Close()
+		}
+	}()
 
 	uTLSServerName, err := d.tlsServerName()
 	if err != nil {
@@ -133,7 +141,14 @@ func (d *ProxyDialer) DialContext(ctx context.Context, network, address string) 
 		conn = tls.Client(conn, &tls.Config{
 			ServerName:         fakeSNI,
 			InsecureSkipVerify: true,
+			ClientSessionCache: d.sessionCache,
 			VerifyConnection: func(cs tls.ConnectionState) error {
+				if cs.DidResume {
+					return nil
+				}
+				if len(cs.PeerCertificates) == 0 {
+					return errors.New("upstream proxy presented no TLS certificate")
+				}
 				opts := x509.VerifyOptions{
 					DNSName:       uTLSServerName,
 					Intermediates: x509.NewCertPool(),
@@ -187,6 +202,7 @@ func (d *ProxyDialer) DialContext(ctx context.Context, network, address string) 
 		return nil, fmt.Errorf("bad response from upstream proxy server: %s", proxyResp.Status)
 	}
 
+	success = true
 	return conn, nil
 }
 
