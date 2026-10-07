@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/Alexey71/go-multierror"
 )
 
 type LookupNetIPer interface {

@@ -12,6 +12,22 @@ const (
 	SE_STATUS_OK int64 = 0
 )
 
+type APIError struct {
+	Code    int64
+	Message string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("API responded with error message: code=%d, msg=%q", e.Code, e.Message)
+}
+
+func newAPIError(status SEStatusPair) error {
+	return &APIError{
+		Code:    status.Code,
+		Message: status.Message,
+	}
+}
+
 type SEStatusPair struct {
 	Code    int64
 	Message string
@@ -85,6 +101,7 @@ type SEGeoListResponse struct {
 
 type SEIPEntry struct {
 	Geo   SEGeoEntry `json:"geo"`
+	Host  string     `json:"host,omitempty"`
 	IP    string     `json:"ip"`
 	Ports []uint16   `json:"ports"`
 }
