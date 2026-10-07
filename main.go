@@ -157,6 +157,10 @@ type CLIArgs struct {
 	apiProxyFile           string
 	apiProxyListURL        string
 	apiProxyParallel       int
+	apiProxyBuiltin        bool
+	apiProxyMax            int
+	memLimitMB             int
+	idleTimeout            time.Duration
 	bootstrapDNS           *CSVArg
 	refresh                time.Duration
 	refreshRetry           time.Duration
@@ -227,7 +231,11 @@ func parse_args() *CLIArgs {
 	flag.StringVar(&args.apiProxy, "api-proxy", "", "additional proxy server used to access SurfEasy API")
 	flag.StringVar(&args.apiProxyFile, "api-proxy-file", "", "path to text file with candidate proxy servers for SurfEasy API access, one per line; proxies are tried in order until init/discover succeeds")
 	flag.StringVar(&args.apiProxyListURL, "api-proxy-list-url", "", "URL of a text file with candidate proxy servers for SurfEasy API access; falls back to -api-proxy-file if download fails")
-	flag.IntVar(&args.apiProxyParallel, "api-proxy-parallel", 15, "number of API proxy candidates tested in parallel when -api-proxy-file is used")
+	flag.IntVar(&args.apiProxyParallel, "api-proxy-parallel", 15, "number of API proxy candidates tested in parallel")
+	flag.BoolVar(&args.apiProxyBuiltin, "api-proxy-builtin", true, "automatically use community public-proxy lists if direct SurfEasy API access or direct endpoint discovery fails")
+	flag.IntVar(&args.apiProxyMax, "api-proxy-max", 60, "maximum number of candidates tested from built-in community proxy lists (0 = unlimited)")
+	flag.IntVar(&args.memLimitMB, "mem-limit-mb", 0, "soft Go runtime memory limit in MiB; 0 = disabled")
+	flag.DurationVar(&args.idleTimeout, "idle-timeout", 0, "close tunnels idle in both directions for this duration; 0 = disabled")
 	flag.Var(args.bootstrapDNS, "bootstrap-dns",
 		"comma-separated list of DNS/DoH/DoT resolvers for initial discovery of SurfEasy API address. "+
 			"Supported schemes are: dns://, https://, tls://, tcp://. "+
@@ -267,6 +275,15 @@ func parse_args() *CLIArgs {
 	}
 	if args.apiProxyParallel < 1 {
 		arg_fail("api-proxy-parallel must be >= 1.")
+	}
+	if args.apiProxyMax < 0 {
+		arg_fail("api-proxy-max must be >= 0.")
+	}
+	if args.memLimitMB < 0 {
+		arg_fail("mem-limit-mb must be >= 0.")
+	}
+	if args.idleTimeout < 0 {
+		arg_fail("idle-timeout must be >= 0.")
 	}
 	switch args.sortProxiesBy {
 	case "speed", "country", "ip":
@@ -757,6 +774,10 @@ func run() int {
 		log.LstdFlags|log.Lshortfile)
 
 	mainLogger.Info("opera-proxy client version %s is starting...", version())
+	if args.memLimitMB > 0 {
+		previous := debug.SetMemoryLimit(int64(args.memLimitMB) << 20)
+		mainLogger.Info("Go runtime soft memory limit set to %d MiB (previous=%d bytes).", args.memLimitMB, previous)
+	}
 
 	proxyBlacklist, err := loadProxyBlacklist(args.proxyBlacklistFile)
 	if err != nil {
@@ -881,70 +902,33 @@ func run() int {
 			return printCountryList(result.countries)
 		}
 	} else {
-		seclientDialer := d
-		if args.apiProxy != "" {
-			apiProxyURL, err := url.Parse(args.apiProxy)
-			if err != nil {
-				mainLogger.Critical("Unable to parse api-proxy URL: %v", err)
-				return 6
+		err = try("API client init", func() error {
+			client, directErr := newSEClient(args, d, caPool, args.apiProxy)
+			if directErr == nil {
+				directErr = callWithTimeout(rootCtx, args.timeout, client.AnonRegister)
 			}
-			pxDialer, err := xproxy.FromURL(apiProxyURL, seclientDialer)
-			if err != nil {
-				mainLogger.Critical("Unable to instantiate api-proxy dialer: %v", err)
-				return 7
+			if directErr == nil {
+				directErr = callWithTimeout(rootCtx, args.timeout, client.RegisterDevice)
 			}
-			seclientDialer = pxDialer.(dialer.ContextDialer)
-		}
-		if args.apiAddress != "" {
-			seclientDialer = dialer.NewFixedDialer(args.apiAddress, seclientDialer)
-		} else if len(args.bootstrapDNS.values) > 0 {
-			res, err := resolver.FastFromURLs(caPool, args.bootstrapDNS.values...)
-			if err != nil {
-				mainLogger.Critical("Unable to instantiate DNS resolver: %v", err)
-				return 4
+			if directErr == nil {
+				seclient = client
+				return nil
 			}
-			seclientDialer = dialer.NewResolvingDialer(res, seclientDialer)
-		}
+			if args.apiProxy != "" || !args.apiProxyBuiltin {
+				return directErr
+			}
 
-		// Dialing w/o SNI, receiving self-signed certificate, so skip verification.
-		// Either way we'll validate certificate of actual proxy server.
-		tlsConfig := &tls.Config{
-			ServerName:         args.fakeSNI,
-			InsecureSkipVerify: true,
-		}
-		dialTLS := func(ctx context.Context, network, addr string) (net.Conn, error) {
-			conn, err := seclientDialer.DialContext(ctx, network, addr)
-			if err != nil {
-				return conn, err
+			mainLogger.Warning("Direct SurfEasy API access failed (%v); trying community proxy sources.", directErr)
+			result, fallbackErr := selectBuiltinAPIProxyCandidate(rootCtx, args, d, caPool, mainLogger, false)
+			if fallbackErr != nil {
+				return fmt.Errorf("direct API failed (%v), community fallback failed: %w", directErr, fallbackErr)
 			}
-			return tls.Client(conn, tlsConfig), nil
-		}
-		seclient, err = se.NewSEClient(args.apiLogin, args.apiPassword,
-			buildSETransport(seclientDialer.DialContext, dialTLS))
-		if err != nil {
-			mainLogger.Critical("Unable to construct SEClient: %v", err)
-			return 8
-		}
-		seclient.Settings.ClientType = args.apiClientType
-		seclient.Settings.ClientVersion = args.apiClientVersion
-		seclient.Settings.UserAgent = args.apiUserAgent
-
-		err = try("anonymous registration", func() error {
-			ctx, cl := context.WithTimeout(rootCtx, args.timeout)
-			defer cl()
-			return seclient.AnonRegister(ctx)
+			seclient = result.client
+			args.apiProxy = result.candidate
+			return nil
 		})
 		if err != nil {
 			return 9
-		}
-
-		err = try("device registration", func() error {
-			ctx, cl := context.WithTimeout(rootCtx, args.timeout)
-			defer cl()
-			return seclient.RegisterDevice(ctx)
-		})
-		if err != nil {
-			return 10
 		}
 
 		if args.listCountries {
@@ -959,16 +943,61 @@ func run() int {
 		return fmt.Sprintf("%s0.%s", strings.ToLower(entry.Geo.CountryCode), PROXY_SUFFIX)
 	}
 
-	handlerDialerFactory := func(entry se.SEIPEntry, endpointAddr string) dialer.ContextDialer {
+	handlerDialerFactory := func(client *se.SEClient, entry se.SEIPEntry, endpointAddr string) dialer.ContextDialer {
 		return dialer.NewProxyDialer(
 			dialer.WrapStringToCb(endpointAddr),
 			dialer.WrapStringToCb(proxyTLSServerName(entry)),
 			dialer.WrapStringToCb(args.fakeSNI),
 			func() (string, error) {
-				return dialer.BasicAuthHeader(seclient.GetProxyCredentials()), nil
+				return dialer.BasicAuthHeader(client.GetProxyCredentials()), nil
 			},
 			caPool,
 			d)
+	}
+
+	selectEndpoints := func(parent context.Context, client *se.SEClient, endpoints []se.SEIPEntry) (dialer.ContextDialer, error) {
+		endpoints = filterRoutableEndpoints(endpoints, mainLogger)
+		if len(endpoints) == 0 {
+			return nil, errors.New("empty routable endpoints list")
+		}
+		var ss dialer.SelectionFunc
+		switch args.serverSelection.value {
+		case dialer.ServerSelectionFirst:
+			ss = dialer.SelectFirst
+		case dialer.ServerSelectionRandom:
+			ss = dialer.SelectRandom
+		case dialer.ServerSelectionFastest:
+			ss = dialer.NewFastestServerSelectionFunc(
+				args.serverSelectionTestURL,
+				args.serverSelectionDLLimit,
+				&tls.Config{RootCAs: caPool},
+			)
+		default:
+			panic("unhandled server selection value got past parsing")
+		}
+		dialers := make([]dialer.ContextDialer, len(endpoints))
+		for i, ep := range endpoints {
+			dialers[i] = handlerDialerFactory(client, ep, ep.NetAddr())
+		}
+		ctx, cl := context.WithTimeout(parent, args.serverSelectionTimeout)
+		defer cl()
+		selected, err := ss(ctx, dialers)
+		if err != nil {
+			return nil, err
+		}
+		if addresser, ok := selected.(interface{ Address() (string, error) }); ok {
+			if epAddr, err := addresser.Address(); err == nil {
+				mainLogger.Info("Selected endpoint address: %s", epAddr)
+			}
+		}
+		ordered := make([]dialer.ContextDialer, 0, len(dialers))
+		ordered = append(ordered, selected)
+		for _, candidate := range dialers {
+			if candidate != selected {
+				ordered = append(ordered, candidate)
+			}
+		}
+		return dialer.NewFailoverDialer(ordered), nil
 	}
 
 	if args.listProxies || args.listProxiesAll || args.dpExport {
@@ -996,7 +1025,9 @@ func run() int {
 			var speedResults map[proxyEndpointKey]proxySpeedResult
 			if args.estimateProxySpeed {
 				mainLogger.Info("Measuring proxy response time for %d endpoints using %q.", countProxyPorts(ips), args.proxySpeedTestURL)
-				speedResults = benchmarkProxyEndpoints(rootCtx, args, ips, caPool, mainLogger, handlerDialerFactory)
+				speedResults = benchmarkProxyEndpoints(rootCtx, args, ips, caPool, mainLogger, func(entry se.SEIPEntry, endpoint string) dialer.ContextDialer {
+					return handlerDialerFactory(seclient, entry, endpoint)
+				})
 			}
 			if args.listProxiesAllOut != "" {
 				if err := writeProxyCSV(args.listProxiesAllOut, ips, seclient, speedResults, args.sortProxiesBy); err != nil {
@@ -1018,9 +1049,9 @@ func run() int {
 	if args.overrideProxyAddress == "" {
 		if !preloadedDiscovery {
 			err = try("discover", func() error {
-				res, err := discoverCountry(rootCtx, args, seclient, mainLogger, args.country)
-				if err != nil {
-					return err
+				res, discoverErr := discoverCountry(rootCtx, args, seclient, mainLogger, args.country)
+				if discoverErr != nil {
+					return discoverErr
 				}
 				if len(res) == 0 {
 					return errors.New("empty endpoints list!")
@@ -1034,39 +1065,20 @@ func run() int {
 		}
 
 		mainLogger.Info("Discovered endpoints: %v. Starting server selection routine %q.", ips, args.serverSelection.value)
-		err = func() error {
-			var ss dialer.SelectionFunc
-			switch args.serverSelection.value {
-			case dialer.ServerSelectionFirst:
-				ss = dialer.SelectFirst
-			case dialer.ServerSelectionRandom:
-				ss = dialer.SelectRandom
-			case dialer.ServerSelectionFastest:
-				ss = dialer.NewFastestServerSelectionFunc(
-					args.serverSelectionTestURL,
-					args.serverSelectionDLLimit,
-					&tls.Config{RootCAs: caPool},
-				)
-			default:
-				panic("unhandled server selection value got past parsing")
+		handlerDialer, err = selectEndpoints(rootCtx, seclient, ips)
+		if err != nil && args.apiProxy == "" && args.apiProxyBuiltin {
+			mainLogger.Warning("Direct discovery returned no reachable Opera endpoint (%v); retrying registration and discovery through community proxy sources.", err)
+			fallback, fallbackErr := selectBuiltinAPIProxyWithEndpoint(rootCtx, args, d, caPool, mainLogger, selectEndpoints)
+			if fallbackErr != nil {
+				mainLogger.Critical("Community endpoint fallback failed: %v", fallbackErr)
+				return 12
 			}
-			dialers := make([]dialer.ContextDialer, len(ips))
-			for i, ep := range ips {
-				dialers[i] = handlerDialerFactory(ep, ep.NetAddr())
-			}
-			ctx, cl := context.WithTimeout(rootCtx, args.serverSelectionTimeout)
-			defer cl()
-			handlerDialer, err = ss(ctx, dialers)
-			if err != nil {
-				return err
-			}
-			if addresser, ok := handlerDialer.(interface{ Address() (string, error) }); ok {
-				if epAddr, err := addresser.Address(); err == nil {
-					mainLogger.Info("Selected endpoint address: %s", epAddr)
-				}
-			}
-			return nil
-		}()
+			seclient = fallback.client
+			args.apiProxy = fallback.candidate
+			ips = fallback.ips
+			handlerDialer = fallback.dialer
+			err = nil
+		}
 		if err != nil {
 			return 12
 		}
@@ -1076,13 +1088,36 @@ func run() int {
 			mainLogger.Critical("Endpoint override %s is blacklisted.", sanitizedEndpoint)
 			return 12
 		}
-		handlerDialer = handlerDialerFactory(se.SEIPEntry{
-			Geo: se.SEGeoEntry{
-				CountryCode: args.country,
-			},
+		handlerDialer = handlerDialerFactory(seclient, se.SEIPEntry{
+			Geo: se.SEGeoEntry{CountryCode: args.country},
 		}, sanitizedEndpoint)
 		mainLogger.Info("Endpoint override: %s", sanitizedEndpoint)
 	}
+
+	if fo, ok := handlerDialer.(*dialer.FailoverDialer); ok {
+		activeClient := seclient
+		fo.SetOnAllFailed(func() {
+			if rootCtx.Err() != nil {
+				return
+			}
+			mainLogger.Warning("All Opera endpoints failed; re-discovering.")
+			res, discoverErr := discoverCountry(rootCtx, args, activeClient, mainLogger, args.country)
+			if discoverErr != nil {
+				mainLogger.Warning("Endpoint re-discovery failed: %v", discoverErr)
+				return
+			}
+			res = filterRoutableEndpoints(res, mainLogger)
+			newDialers := make([]dialer.ContextDialer, 0, len(res))
+			for _, ep := range res {
+				newDialers = append(newDialers, handlerDialerFactory(activeClient, ep, ep.NetAddr()))
+			}
+			if len(newDialers) > 0 {
+				fo.Set(newDialers)
+				mainLogger.Info("Re-discovered %d Opera endpoint(s).", len(newDialers))
+			}
+		})
+	}
+
 	if len(args.proxyBypass.values) > 0 {
 		bypassDialer, err := dialer.NewBypassDialer(args.proxyBypass.values, directDialer, handlerDialer)
 		if err != nil {
