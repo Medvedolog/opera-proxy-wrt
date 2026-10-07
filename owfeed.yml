@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://owfeed.org/schema/v1.json
+version: 1
+
+feed:
+  name: luci-app-opera-proxy
+  url: https://github.com/Medvedolog/opera-proxy-wrt
+  title: luci-app-opera-proxy
+  maintainer: "Medvedolog <Medvedolog@github.com>"
+  homepage: https://github.com/Medvedolog/opera-proxy-wrt
+
+releases:
+  - line: "25.12"
+    default: true
+    format: apk
+    arches:
+      [aarch64_generic, aarch64_cortex-a53, aarch64_cortex-a72, aarch64_cortex-a76,
+       arm_cortex-a7, arm_cortex-a7_neon-vfpv4, arm_cortex-a7_vfpv4,
+       arm_cortex-a9, arm_cortex-a9_neon, arm_cortex-a9_vfpv3-d16,
+       mips_24kc, mips_mips32,
+       mipsel_24kc, mipsel_24kc_24kf, mipsel_74kc, mipsel_mips32,
+       mips64_mips64r2, mips64_octeonplus, mips64el_mips64r2,
+       x86_64]
+  - line: "24.10"
+    format: ipk
+    arches:
+      [aarch64_generic, aarch64_cortex-a53, aarch64_cortex-a72, aarch64_cortex-a76,
+       arm_cortex-a7, arm_cortex-a7_neon-vfpv4, arm_cortex-a7_vfpv4,
+       arm_cortex-a9, arm_cortex-a9_neon, arm_cortex-a9_vfpv3-d16,
+       mips_24kc, mips_4kec, mips_mips32,
+       mipsel_24kc, mipsel_24kc_24kf, mipsel_74kc, mipsel_mips32,
+       mips64_mips64r2, mips64_octeonplus, mips64el_mips64r2,
+       x86_64]
+
+publish:
+  - target: github-pages
+
+packages:
+  - name: luci-app-opera-proxy
+    build: mkpkg
+    arch:
+      [aarch64_generic, aarch64_cortex-a53, aarch64_cortex-a72, aarch64_cortex-a76,
+       arm_cortex-a7, arm_cortex-a7_neon-vfpv4, arm_cortex-a7_vfpv4,
+       arm_cortex-a9, arm_cortex-a9_neon, arm_cortex-a9_vfpv3-d16,
+       mips_24kc, mips_4kec, mips_mips32,
+       mipsel_24kc, mipsel_24kc_24kf, mipsel_74kc, mipsel_mips32,
+       mips64_mips64r2, mips64_octeonplus, mips64el_mips64r2,
+       x86_64]
+    version-from: file:./dist/VERSION
+    files: ./dist/stage/{arch}
+
+    description: "Opera Proxy for OpenWrt with LuCI, automatic community API fallback, endpoint failover and low-RAM controls."
+    depends: [libc, procd, uci, luci-base, rpcd, rpcd-mod-file, curl, ca-bundle]
+    license: MIT
+    url: https://github.com/Medvedolog/opera-proxy-wrt
+    maintainer: "Medvedolog <Medvedolog@github.com>"
+    repo-commit: env:GITHUB_SHA
+
+    conffiles: ["/etc/config/opera-proxy"]
+
+    scripts:
+      post-install: ./dist/scripts/postinst
+      pre-deinstall: ./dist/scripts/prerm

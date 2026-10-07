@@ -1,0 +1,124 @@
+name: OpenWrt owfeed CI
+
+on:
+  push:
+    branches: [master, dev/ru-resilience]
+    tags: ['v[0-9]*', '[0-9]*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build native OpenWrt packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install checks
+        run: sudo apt-get update && sudo apt-get install -y jq file binutils
+
+      - uses: owfeed/owfeed/setup@v0.5.1
+        with:
+          version: v0.5.1
+
+      - name: Source checks and Go tests
+        run: |
+          sh tools/check-sources.sh
+          go test ./...
+
+      - name: Build Linux binaries
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build
+          export CGO_ENABLED=0 GOOS=linux
+          COMMON=(-trimpath -buildvcs=false -tags "netgo osusergo" -ldflags="-s -w -buildid=")
+
+          GOARCH=amd64 go build "${COMMON[@]}" -o build/opera-proxy-amd64 .
+          GOARCH=arm64 go build "${COMMON[@]}" -o build/opera-proxy-arm64 .
+          GOARCH=arm GOARM=7 go build "${COMMON[@]}" -o build/opera-proxy-arm .
+          GOARCH=mips GOMIPS=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips .
+          GOARCH=mipsle GOMIPS=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mipsle .
+          GOARCH=mips64 GOMIPS64=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips64 .
+          GOARCH=mips64le GOMIPS64=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips64le .
+
+          file build/*
+          readelf -h build/opera-proxy-mips | grep -E 'Class:.*ELF32|Data:.*big endian|Machine:.*MIPS'
+          readelf -h build/opera-proxy-mipsle | grep -E 'Class:.*ELF32|Data:.*little endian|Machine:.*MIPS'
+          readelf -h build/opera-proxy-mips64 | grep -E 'Class:.*ELF64|Data:.*big endian|Machine:.*MIPS'
+          readelf -h build/opera-proxy-mips64le | grep -E 'Class:.*ELF64|Data:.*little endian|Machine:.*MIPS'
+
+      - name: Stage OpenWrt roots
+        run: |
+          BIN_AMD64="$PWD/build/opera-proxy-amd64"           BIN_ARM64="$PWD/build/opera-proxy-arm64"           BIN_ARM="$PWD/build/opera-proxy-arm"           BIN_MIPS="$PWD/build/opera-proxy-mips"           BIN_MIPSLE="$PWD/build/opera-proxy-mipsle"           BIN_MIPS64="$PWD/build/opera-proxy-mips64"           BIN_MIPS64LE="$PWD/build/opera-proxy-mips64le"           ./tools/stage.sh
+
+      - name: Build APKv3 and IPK with owfeed
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+          owfeed plan
+          owfeed check
+          owfeed build
+          sh tools/check-package.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opera-proxy-owfeed-packages
+          path: dist/
+          if-no-files-found: error
+
+  verify:
+    name: Install in real OpenWrt userspace
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: opera-proxy-owfeed-packages
+          path: dist/
+
+      - uses: owfeed/owlab/setup@v0.6.5
+        with:
+          version: v0.6.5
+
+      - name: OpenWrt 25.12 APKv3
+        uses: owfeed/owlab/action@v0.6.5
+        with:
+          version: v0.6.5
+          releases: "25.12.5"
+          install: dist/x86_64/luci-app-opera-proxy-*.apk
+          assert: |
+            package luci-app-opera-proxy
+            file /usr/bin/opera-proxy
+            file /etc/init.d/opera-proxy
+            file /etc/config/opera-proxy
+            file /usr/share/luci/menu.d/luci-app-opera-proxy.json
+            file /www/luci-static/resources/view/opera-proxy/config.js
+            exec /usr/bin/opera-proxy -version >/dev/null
+            exec uci -q get opera-proxy.main.api_proxy_builtin | grep -qx 1
+
+      - name: OpenWrt 24.10 IPK
+        uses: owfeed/owlab/action@v0.6.5
+        with:
+          version: v0.6.5
+          releases: "24.10.8"
+          install: dist/x86_64/luci-app-opera-proxy_*.ipk
+          assert: |
+            package luci-app-opera-proxy
+            file /usr/bin/opera-proxy
+            file /etc/init.d/opera-proxy
+            file /etc/config/opera-proxy
+            file /usr/share/rpcd/acl.d/luci-app-opera-proxy.json
+            exec /usr/bin/opera-proxy -version >/dev/null
+            exec uci -q get opera-proxy.main.api_proxy_max | grep -qx 60
