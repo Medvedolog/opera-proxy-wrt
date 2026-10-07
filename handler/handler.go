@@ -73,10 +73,16 @@ type ProxyHandler struct {
 	idleTimeout   time.Duration
 }
 
-func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger, idleTimeoutOpt ...time.Duration) *ProxyHandler {
+func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger, compatOpt ...any) *ProxyHandler {
 	var idleTimeout time.Duration
-	if len(idleTimeoutOpt) > 0 {
-		idleTimeout = idleTimeoutOpt[0]
+	if len(compatOpt) > 0 {
+		switch v := compatOpt[0].(type) {
+		case time.Duration:
+			idleTimeout = v
+		case string:
+			// Compatibility with the short-lived upstream fake-SNI constructor API.
+			// fake SNI is handled by the upstream dialer now, so the value is ignored.
+		}
 	}
 	httptransport := &http.Transport{
 		MaxIdleConns:          TRANSPORT_MAX_IDLE_CONNS,
