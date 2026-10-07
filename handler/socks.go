@@ -17,7 +17,11 @@ import (
 // NewSocksServer creates a SOCKS5 server using the provided dialer.
 // logger controls SOCKS-level diagnostic output; pass a logger backed by
 // io.Discard to suppress all messages (e.g. when verbosity >= SILENT).
-func NewSocksServer(dialer dialer.ContextDialer, logger *log.Logger, idleTimeout time.Duration) (*socks5.Server, error) {
+func NewSocksServer(dialer dialer.ContextDialer, logger *log.Logger, idleTimeoutOpt ...time.Duration) (*socks5.Server, error) {
+	var idleTimeout time.Duration
+	if len(idleTimeoutOpt) > 0 {
+		idleTimeout = idleTimeoutOpt[0]
+	}
 	opts := []socks5.Option{
 		socks5.WithLogger(socks5.NewLogger(logger)),
 		socks5.WithRule(
