@@ -187,29 +187,29 @@ return view.extend({
 
     renderStatusHtml: function(rt) {
         var running   = !!rt.pid;
-        var modeColor = rt.mode === 'SOCKS5' ? '#2563eb' : '#059669';
+        var modeColor = rt.mode === 'SOCKS5' ? 'var(--primary-color-high, #2563eb)' : 'var(--success-color-medium, #059669)';
         var verLabel  = rt.clientVersion ? escapeHtml(rt.clientVersion) : '<em>(binary default)</em>';
         return [
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;align-items:stretch">',
-              '<div style="padding:10px;border:1px solid #d1d5db;border-radius:10px;background:#fff">',
-                '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Service state</div>',
-                '<div>' + badge(running ? 'Running' : 'Stopped', running ? '#16a34a' : '#dc2626') + '</div>',
+              '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Service state</div>',
+                '<div>' + badge(running ? 'Running' : 'Stopped', running ? 'var(--success-color-medium, #16a34a)' : 'var(--error-color-medium, #dc2626)') + '</div>',
                 '<div style="margin-top:8px"><strong>PID:</strong> ' + escapeHtml(rt.pid || '-') + '</div>',
                 '<div style="margin-top:4px"><strong>RSS:</strong> ' + formatKBToMB(rt.vmrss) + '</div>',
               '</div>',
-              '<div style="padding:10px;border:1px solid #d1d5db;border-radius:10px;background:#fff">',
-                '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Proxy mode</div>',
+              '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Proxy mode</div>',
                 '<div>' + badge(rt.mode, modeColor) + '</div>',
                 '<div style="margin-top:8px"><strong>Listen:</strong> ' + escapeHtml(rt.bind) + '</div>',
                 '<div style="margin-top:4px"><strong>Country:</strong> ' + escapeHtml(rt.country) + '</div>',
               '</div>',
-              '<div style="padding:10px;border:1px solid #d1d5db;border-radius:10px;background:#fff">',
-                '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Browser identity</div>',
+              '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Browser identity</div>',
                 '<div style="font-size:12px;word-break:break-all"><strong>Client ver:</strong> ' + verLabel + '</div>',
                 '<div style="margin-top:8px"><strong>VmSize:</strong> ' + formatKBToMB(rt.vmsize) + '</div>',
               '</div>',
             '</div>',
-            '<div style="margin-top:8px;color:#6b7280">Status via <code>pidof opera-proxy</code> and <code>/proc/&lt;pid&gt;/status</code>.</div>'
+            '<div style="margin-top:8px;color:var(--text-color-medium,#6b7280)">Status via <code>pidof opera-proxy</code> and <code>/proc/&lt;pid&gt;/status</code>.</div>'
         ].join('');
     },
 
@@ -430,7 +430,7 @@ return view.extend({
                 '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="restart">Restart</button>',
                 '<button type="button" class="btn cbi-button cbi-button-action important" data-opera-action="test">Test proxy</button>',
                 '</div>',
-                '<div data-opera-action-state="1" style="margin-top:8px;min-height:1.4em;color:#6b7280">No action executed yet.</div>'
+                '<div data-opera-action-state="1" style="margin-top:8px;min-height:1.4em;color:var(--text-color-medium,#6b7280)">No action executed yet.</div>'
             ].join('');
         };
 
@@ -564,7 +564,7 @@ return view.extend({
                 '<button type="button" class="btn cbi-button cbi-button-action" data-opera-refresh-logs="1">Refresh logs</button>',
                 '<span style="color:#6b7280">Runs: logread -e opera-proxy</span>',
                 '</div>',
-                '<textarea data-opera-logs="1" readonly="readonly" wrap="off" style="margin-top:10px;width:100%;min-height:220px;font-family:monospace;background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:8px;padding:10px"></textarea>',
+                '<textarea data-opera-logs="1" readonly="readonly" wrap="off" style="margin-top:10px;width:100%;min-height:220px;font-family:monospace;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit);border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:8px;padding:10px"></textarea>',
                 '</details>'
             ].join('');
         };
