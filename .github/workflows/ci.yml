@@ -122,3 +122,41 @@ jobs:
             file /usr/share/rpcd/acl.d/luci-app-opera-proxy.json
             exec /usr/bin/opera-proxy -version >/dev/null
             exec uci -q get opera-proxy.main.api_proxy_max | grep -qx 60
+
+
+  release-preflight:
+    name: Release signing preflight
+    needs: [build, verify]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify committed public signing keys
+        run: |
+          set -eu
+          test -s keys/opera-proxy-sign.pub.pem || {
+            echo 'missing keys/opera-proxy-sign.pub.pem; run tools/setup-keys.sh once and commit the public keys'
+            exit 1
+          }
+          test -s keys/opera-proxy-release.pub || {
+            echo 'missing keys/opera-proxy-release.pub; run tools/setup-keys.sh once and commit the public keys'
+            exit 1
+          }
+
+  release:
+    name: Sign and publish
+    needs: [build, verify, release-preflight]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    uses: owfeed/owfeed/.github/workflows/package.yml@v0.5.1
+    secrets:
+      sign-key: ${{ secrets.OPERA_PROXY_SIGN_KEY }}
+      usign-key: ${{ secrets.OPERA_PROXY_USIGN_KEY }}
+    with:
+      owfeed-version: v0.5.1
+      artifact: opera-proxy-owfeed-packages
+      verify-with: keys/opera-proxy-release.pub
