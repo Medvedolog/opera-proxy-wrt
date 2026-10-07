@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	COPY_BUF    = 128 * 1024
+	COPY_BUF    = 32 * 1024
 	BAD_REQ_MSG = "Bad Request\n"
 
 	// Reduced idle pool: the proxy handler makes upstream connections per request,
@@ -51,13 +51,29 @@ func copyWithPool(dst io.Writer, src io.Reader) {
 	io.CopyBuffer(dst, src, *bufp)
 }
 
+type idleConn struct {
+	net.Conn
+	idle time.Duration
+}
+
+func (c *idleConn) Read(b []byte) (int, error) {
+	_ = c.Conn.SetDeadline(time.Now().Add(c.idle))
+	return c.Conn.Read(b)
+}
+
+func (c *idleConn) Write(b []byte) (int, error) {
+	_ = c.Conn.SetDeadline(time.Now().Add(c.idle))
+	return c.Conn.Write(b)
+}
+
 type ProxyHandler struct {
 	logger        *clog.CondLogger
 	dialer        dialer.ContextDialer
 	httptransport http.RoundTripper
+	idleTimeout   time.Duration
 }
 
-func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger) *ProxyHandler {
+func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger, idleTimeout time.Duration) *ProxyHandler {
 	httptransport := &http.Transport{
 		MaxIdleConns:          TRANSPORT_MAX_IDLE_CONNS,
 		MaxIdleConnsPerHost:   TRANSPORT_MAX_IDLE_CONNS_PER_HOST,
@@ -70,6 +86,7 @@ func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger) *Prox
 		logger:        logger,
 		dialer:        dialer,
 		httptransport: httptransport,
+		idleTimeout:   idleTimeout,
 	}
 }
 
@@ -100,12 +117,12 @@ func (s *ProxyHandler) HandleTunnel(wr http.ResponseWriter, req *http.Request) {
 		// Inform client connection is built
 		fmt.Fprintf(localconn, "HTTP/%d.%d 200 OK\r\n\r\n", req.ProtoMajor, req.ProtoMinor)
 
-		proxy(req.Context(), localconn, conn)
+		proxy(req.Context(), localconn, conn, s.idleTimeout)
 	} else if req.ProtoMajor == 2 {
 		wr.Header()["Date"] = nil
 		wr.WriteHeader(http.StatusOK)
 		flush(wr)
-		proxyh2(req.Context(), req.Body, wr, conn)
+		proxyh2(req.Context(), req.Body, wr, conn, s.idleTimeout)
 	} else {
 		s.logger.Error("Unsupported protocol version: %s", req.Proto)
 		http.Error(wr, "Unsupported protocol version.", http.StatusBadRequest)
@@ -153,7 +170,11 @@ func (s *ProxyHandler) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 
 // proxy relays data bidirectionally between two net.Conn until either the
 // context is cancelled or both sides close.
-func proxy(ctx context.Context, left, right net.Conn) {
+func proxy(ctx context.Context, left, right net.Conn, idle time.Duration) {
+	if idle > 0 {
+		left = &idleConn{Conn: left, idle: idle}
+		right = &idleConn{Conn: right, idle: idle}
+	}
 	wg := sync.WaitGroup{}
 	cpy := func(dst, src net.Conn) {
 		defer wg.Done()
@@ -180,7 +201,10 @@ func proxy(ctx context.Context, left, right net.Conn) {
 
 // proxyh2 relays an HTTP/2 tunnel: leftreader/leftwriter are the HTTP/2 body
 // streams, right is the raw upstream TCP connection.
-func proxyh2(ctx context.Context, leftreader io.ReadCloser, leftwriter io.Writer, right net.Conn) {
+func proxyh2(ctx context.Context, leftreader io.ReadCloser, leftwriter io.Writer, right net.Conn, idle time.Duration) {
+	if idle > 0 {
+		right = &idleConn{Conn: right, idle: idle}
+	}
 	wg := sync.WaitGroup{}
 	ltr := func(dst net.Conn, src io.Reader) {
 		defer wg.Done()
@@ -192,6 +216,8 @@ func proxyh2(ctx context.Context, leftreader io.ReadCloser, leftwriter io.Writer
 		// HTTP/2 writer side: flush after each chunk so the client receives
 		// data progressively. copyBody handles the Flusher call.
 		copyBody(dst, src)
+		right.Close()
+		leftreader.Close()
 	}
 	wg.Add(2)
 	go ltr(right, leftreader)
