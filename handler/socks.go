@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/Alexey71/opera-proxy/dialer"
 	"github.com/things-go/go-socks5"
@@ -16,7 +17,7 @@ import (
 // NewSocksServer creates a SOCKS5 server using the provided dialer.
 // logger controls SOCKS-level diagnostic output; pass a logger backed by
 // io.Discard to suppress all messages (e.g. when verbosity >= SILENT).
-func NewSocksServer(dialer dialer.ContextDialer, logger *log.Logger) (*socks5.Server, error) {
+func NewSocksServer(dialer dialer.ContextDialer, logger *log.Logger, idleTimeout time.Duration) (*socks5.Server, error) {
 	opts := []socks5.Option{
 		socks5.WithLogger(socks5.NewLogger(logger)),
 		socks5.WithRule(
@@ -26,13 +27,13 @@ func NewSocksServer(dialer dialer.ContextDialer, logger *log.Logger) (*socks5.Se
 		),
 		socks5.WithResolver(DummySocksResolver{}),
 		socks5.WithConnectHandle(func(ctx context.Context, writer io.Writer, request *socks5.Request) error {
-			return handleSocksConnect(ctx, writer, request, dialer)
+			return handleSocksConnect(ctx, writer, request, dialer, idleTimeout)
 		}),
 	}
 	return socks5.NewServer(opts...), nil
 }
 
-func handleSocksConnect(ctx context.Context, writer io.Writer, request *socks5.Request, upstream dialer.ContextDialer) error {
+func handleSocksConnect(ctx context.Context, writer io.Writer, request *socks5.Request, upstream dialer.ContextDialer, idleTimeout time.Duration) error {
 	target, err := upstream.DialContext(ctx, "tcp", request.DestAddr.String())
 	if err != nil {
 		reply := statute.RepHostUnreachable
@@ -59,7 +60,7 @@ func handleSocksConnect(ctx context.Context, writer io.Writer, request *socks5.R
 		return fmt.Errorf("writer is %T, expected net.Conn", writer)
 	}
 
-	proxy(ctx, clientConn, target)
+	proxy(ctx, clientConn, target, idleTimeout)
 	return nil
 }
 
