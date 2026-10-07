@@ -73,7 +73,11 @@ type ProxyHandler struct {
 	idleTimeout   time.Duration
 }
 
-func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger, idleTimeout time.Duration) *ProxyHandler {
+func NewProxyHandler(dialer dialer.ContextDialer, logger *clog.CondLogger, idleTimeoutOpt ...time.Duration) *ProxyHandler {
+	var idleTimeout time.Duration
+	if len(idleTimeoutOpt) > 0 {
+		idleTimeout = idleTimeoutOpt[0]
+	}
 	httptransport := &http.Transport{
 		MaxIdleConns:          TRANSPORT_MAX_IDLE_CONNS,
 		MaxIdleConnsPerHost:   TRANSPORT_MAX_IDLE_CONNS_PER_HOST,
