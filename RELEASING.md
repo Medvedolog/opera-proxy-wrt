@@ -62,7 +62,7 @@ Keep the private copies outside git and delete `keys-setup/` afterwards.
 
 The base package version is read from `version.txt`.
 
-A tag `v1.30.0` currently produces `1.30.0-r2`.
+A tag `v1.30.0` currently produces `1.30.0-r3`.
 A tag `v1.30.0-N` produces `1.30.0-rN`.
 
 Do not create the first release tag until the public keys are committed and the

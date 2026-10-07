@@ -35,3 +35,8 @@ grep -q "api.anthropic.com" root/usr/libexec/opera-proxy-probe
 grep -q "www.youtube.com" root/usr/libexec/opera-proxy-probe
 grep -q "ab.chatgpt.com" root/usr/libexec/opera-proxy-probe
 grep -q "api.github.com" root/usr/libexec/opera-proxy-probe
+
+grep -q "makeSectionsCollapsible" root/www/luci-static/resources/view/opera-proxy/config.js
+grep -q "FIELD_HELP" root/www/luci-static/resources/view/opera-proxy/config.js
+grep -q "data-tooltip" root/www/luci-static/resources/view/opera-proxy/config.js
+grep -q "localStorage" root/www/luci-static/resources/view/opera-proxy/config.js

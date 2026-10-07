@@ -4,7 +4,7 @@ set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${OUT:-$ROOT/dist}"
 BASE_VERSION="$(tr -d '[:space:]' < "$ROOT/version.txt")"
-REV=2
+REV=3
 
 if [ "${GITHUB_REF_TYPE:-}" = tag ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
     TAG="${GITHUB_REF_NAME#v}"
