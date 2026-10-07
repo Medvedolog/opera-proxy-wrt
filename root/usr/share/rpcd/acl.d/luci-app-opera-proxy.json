@@ -2,22 +2,45 @@
   "luci-app-opera-proxy": {
     "description": "Grant access to Opera Proxy configuration, runtime status and service control",
     "read": {
-      "uci": [ "opera-proxy" ],
+      "uci": [
+        "opera-proxy"
+      ],
       "ubus": {
-        "file": [ "stat", "read", "exec" ]
+        "file": [
+          "stat",
+          "read",
+          "exec"
+        ]
       },
       "file": {
-        "/bin/pidof": [ "exec" ],
-        "/sbin/logread": [ "exec" ],
-        "/usr/bin/opera-proxy": [ "exec" ],
-        "/usr/bin/curl": [ "exec" ],
-        "/proc/*/status": [ "read" ]
+        "/bin/pidof": [
+          "exec"
+        ],
+        "/sbin/logread": [
+          "exec"
+        ],
+        "/usr/bin/opera-proxy": [
+          "exec"
+        ],
+        "/usr/bin/curl": [
+          "exec"
+        ],
+        "/proc/*/status": [
+          "read"
+        ],
+        "/usr/libexec/opera-proxy-probe": [
+          "exec"
+        ]
       }
     },
     "write": {
-      "uci": [ "opera-proxy" ],
+      "uci": [
+        "opera-proxy"
+      ],
       "ubus": {
-        "luci": [ "setInitAction" ]
+        "luci": [
+          "setInitAction"
+        ]
       }
     }
   }

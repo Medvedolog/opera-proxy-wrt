@@ -268,19 +268,56 @@ return view.extend({
     handleProxyTest: function() {
         return ui.createHandlerFn(this, function(ev) {
             if (ev) ev.preventDefault();
-            var mode = (uci.get('opera-proxy', 'main', 'socks_mode') === '1') ? 'SOCKS5' : 'HTTP';
-            var bind = uci.get('opera-proxy', 'main', 'bind_address') || '127.0.0.1:18080';
-            var args = (mode === 'SOCKS5')
-                ? ['--silent', '--show-error', '--max-time', '15', '--socks5-hostname', bind, 'http://ipv4.icanhazip.com']
-                : ['--silent', '--show-error', '--max-time', '15', '--proxy', 'http://' + bind, 'http://ipv4.icanhazip.com'];
 
-            this.setActionState(true, 'Testing proxy via ' + mode + ' ' + bind + ' ...');
-            return L.resolveDefault(fs.exec_direct('/usr/bin/curl', args, 'text'), '')
+            this.setActionState(true, 'Testing Telegram API, GitHub, Claude, YouTube and ChatGPT through Opera Proxy ...');
+
+            return fs.exec_direct('/usr/libexec/opera-proxy-probe', [], 'text')
                 .then(L.bind(function(out) {
-                    var ip = String(out || '').trim();
-                    if (!ip) throw new Error('Empty response from test target');
-                    this.setActionState(false, 'Proxy test OK. Exit IP: ' + ip);
-                    ui.addNotification(null, E('p', {}, 'Proxy test OK. Exit IP: ' + ip));
+                    var lines = String(out || '').trim().split(/\r?\n/).filter(function(line) { return !!line; });
+                    var results = lines.map(function(line) {
+                        var p = line.split('|');
+                        return {
+                            name: p[0] || 'Unknown',
+                            status: p[1] || 'error',
+                            code: p[2] || '000',
+                            ms: parseInt(p[3] || '0', 10) || 0
+                        };
+                    });
+
+                    if (!results.length)
+                        throw new Error('Proxy probe returned no results');
+
+                    var ok = 0, reachable = 0;
+                    var rows = results.map(function(r) {
+                        var good = r.status === 'ok';
+                        var partial = r.status === 'reachable';
+                        if (good) ok++;
+                        else if (partial) reachable++;
+
+                        var mark = good ? '✓' : (partial ? '!' : '✗');
+                        var detail;
+                        if (r.status === 'proxy_down')
+                            detail = 'proxy service is not running';
+                        else if (r.status === 'timeout')
+                            detail = 'timeout';
+                        else if (r.status === 'blocked')
+                            detail = 'blocked, HTTP ' + r.code;
+                        else if (r.status === 'error')
+                            detail = 'probe error';
+                        else
+                            detail = 'HTTP ' + r.code + ', ' + r.ms + ' ms';
+
+                        return E('li', {
+                            'style': 'margin:.25em 0;color:' + (good ? '#15803d' : (partial ? '#a16207' : '#b91c1c'))
+                        }, [ mark + ' ', E('strong', {}, r.name), ' — ' + detail ]);
+                    });
+
+                    var summary = ok + '/5 services OK' + (reachable ? ', ' + reachable + ' reachable with unexpected HTTP status' : '');
+                    this.setActionState(false, 'Proxy test: ' + summary);
+                    ui.addNotification(null, E('div', {}, [
+                        E('strong', {}, 'Opera Proxy connectivity: ' + summary),
+                        E('ul', { 'style': 'margin:.5em 0 0 1.2em' }, rows)
+                    ]));
                     return Promise.all([ this.refreshStatus(), this.refreshLogs() ]);
                 }, this))
                 .catch(L.bind(function(err) {

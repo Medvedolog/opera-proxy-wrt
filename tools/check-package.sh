@@ -16,7 +16,7 @@ mkdir -p "$work/data" "$work/control"
 tar xzf "$work/data.tar.gz" -C "$work/data"
 tar xzf "$work/control.tar.gz" -C "$work/control"
 
-for f in   usr/bin/opera-proxy   etc/init.d/opera-proxy   etc/config/opera-proxy   usr/share/luci/menu.d/luci-app-opera-proxy.json   usr/share/rpcd/acl.d/luci-app-opera-proxy.json   www/luci-static/resources/view/opera-proxy/config.js
+for f in   usr/bin/opera-proxy   etc/init.d/opera-proxy   etc/config/opera-proxy   usr/share/luci/menu.d/luci-app-opera-proxy.json   usr/share/rpcd/acl.d/luci-app-opera-proxy.json   www/luci-static/resources/view/opera-proxy/config.js   usr/libexec/opera-proxy-probe
 do
     [ -e "$work/data/$f" ] || { echo "missing package payload: /$f" >&2; exit 1; }
 done
@@ -24,5 +24,6 @@ done
 grep -qx '/etc/config/opera-proxy' "$work/control/conffiles"
 test -x "$work/data/usr/bin/opera-proxy"
 test -x "$work/data/etc/init.d/opera-proxy"
+test -x "$work/data/usr/libexec/opera-proxy-probe"
 
 echo "package checks passed"

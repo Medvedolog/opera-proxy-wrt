@@ -1,0 +1,116 @@
+#!/bin/sh
+# Multi-service Opera Proxy reachability probe for LuCI.
+# Output: label|status|http_code|latency_ms
+set -u
+
+CFG="opera-proxy"
+TMP="/tmp/opera-proxy-probe.$$"
+mkdir -p "$TMP" || exit 1
+trap 'rm -rf "$TMP" 2>/dev/null' EXIT INT TERM
+
+mode="$(uci -q get "$CFG.main.socks_mode" 2>/dev/null || echo 1)"
+bind="$(uci -q get "$CFG.main.bind_address" 2>/dev/null || echo 127.0.0.1:18080)"
+
+case "$bind" in
+    0.0.0.0:*) bind="127.0.0.1:${bind##*:}" ;;
+    "[::]:"*)   bind="127.0.0.1:${bind##*:}" ;;
+esac
+
+if [ "$mode" = "1" ]; then
+    proxy="socks5h://$bind"
+else
+    proxy="http://$bind"
+fi
+
+probe_one() {
+    slot="$1"
+    label="$2"
+    url="$3"
+    ok_codes="$4"
+    method="${5:-GET}"
+    header="${6:-}"
+    out="$TMP/$slot"
+    err="$TMP/$slot.err"
+
+    if ! command -v curl >/dev/null 2>&1; then
+        printf '%s|error|000|0\n' "$label" > "$out"
+        return 0
+    fi
+
+    if [ -n "$header" ]; then
+        resp="$(curl -q -4 -k -sS -o /dev/null -w '%{http_code}|%{time_total}' \
+            --proxy "$proxy" --connect-timeout 5 --max-time 12 \
+            -X "$method" -H "$header" "$url" 2>"$err")"
+        rc=$?
+    else
+        resp="$(curl -q -4 -k -sS -o /dev/null -w '%{http_code}|%{time_total}' \
+            --proxy "$proxy" --connect-timeout 5 --max-time 12 \
+            -X "$method" "$url" 2>"$err")"
+        rc=$?
+    fi
+
+    code="${resp%%|*}"
+    secs="${resp#*|}"
+    [ "$secs" = "$resp" ] && secs=0
+    ms="$(awk -v t="${secs:-0}" 'BEGIN { if (t+0 >= 0) printf "%d", (t*1000)+0.5; else print 0 }' 2>/dev/null)"
+    case "$ms" in ''|*[!0-9]*) ms=0 ;; esac
+    case "$code" in ''|*[!0-9]*) code=000 ;; esac
+
+    status="reachable"
+    case " $ok_codes " in
+        *" $code "*) status="ok" ;;
+        *)
+            if [ "$rc" -eq 28 ] || [ "$code" = "000" ]; then
+                status="timeout"
+            else
+                case "$code" in
+                    403|451) status="blocked" ;;
+                    *)       status="reachable" ;;
+                esac
+            fi
+            ;;
+    esac
+
+    printf '%s|%s|%s|%s\n' "$label" "$status" "$code" "$ms" > "$out"
+    rm -f "$err" 2>/dev/null
+    return 0
+}
+
+if ! pidof opera-proxy >/dev/null 2>&1; then
+    for label in "Telegram API" "GitHub" "Claude" "YouTube" "ChatGPT"; do
+        printf '%s|proxy_down|000|0\n' "$label"
+    done
+    exit 0
+fi
+
+# Same high-signal service set as BearGuard, trimmed to five targets.
+probe_one telegram "Telegram API" "https://api.telegram.org/bot000000000:invalid/getMe" "200 401 404" &
+p1=$!
+probe_one github "GitHub" "https://api.github.com/" "200" &
+p2=$!
+probe_one claude "Claude" "https://api.anthropic.com/v1/models" "200 401" &
+p3=$!
+probe_one youtube "YouTube" "https://www.youtube.com/sw.js_data" "200" &
+p4=$!
+probe_one chatgpt "ChatGPT" "https://ab.chatgpt.com/v1/initialize" "200 401" "POST" \
+    "Statsig-Api-Key: client-zUdXdSTygXJdzoE0sWTkP8GKTVsUMF2IRM7ShVO2JAG" &
+p5=$!
+
+for p in "$p1" "$p2" "$p3" "$p4" "$p5"; do
+    wait "$p" 2>/dev/null || true
+done
+
+for slot in telegram github claude youtube chatgpt; do
+    if [ -s "$TMP/$slot" ]; then
+        cat "$TMP/$slot"
+    else
+        case "$slot" in
+            telegram) label="Telegram API" ;;
+            github) label="GitHub" ;;
+            claude) label="Claude" ;;
+            youtube) label="YouTube" ;;
+            chatgpt) label="ChatGPT" ;;
+        esac
+        printf '%s|error|000|0\n' "$label"
+    fi
+done

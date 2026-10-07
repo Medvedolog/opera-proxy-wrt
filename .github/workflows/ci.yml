@@ -105,6 +105,8 @@ jobs:
             file /etc/config/opera-proxy
             file /usr/share/luci/menu.d/luci-app-opera-proxy.json
             file /www/luci-static/resources/view/opera-proxy/config.js
+            file /usr/libexec/opera-proxy-probe
+            exec sh -n /usr/libexec/opera-proxy-probe
             exec /usr/bin/opera-proxy -version >/dev/null
             exec uci -q get opera-proxy.main.api_proxy_builtin | grep -qx 1
 
@@ -120,6 +122,8 @@ jobs:
             file /etc/init.d/opera-proxy
             file /etc/config/opera-proxy
             file /usr/share/rpcd/acl.d/luci-app-opera-proxy.json
+            file /usr/libexec/opera-proxy-probe
+            exec sh -n /usr/libexec/opera-proxy-probe
             exec /usr/bin/opera-proxy -version >/dev/null
             exec uci -q get opera-proxy.main.api_proxy_max | grep -qx 60
 
