@@ -1,0 +1,48 @@
+config service 'main'
+    option enabled '1'
+    option country 'EU'
+    option bind_address '127.0.0.1:18080'
+    option socks_mode '1'
+    option verbosity '20'
+    option timeout '30s'
+    option init_retries '0'
+    option init_retry_interval '5s'
+    option refresh '4h'
+    option refresh_retry '5s'
+    option server_selection 'fastest'
+    option server_selection_timeout '60s'
+    option bootstrap_dns 'tls://9.9.9.9:853'
+    option proxy ''
+    option api_proxy ''
+option api_proxy_file ''
+option api_proxy_list_url ''
+option api_proxy_builtin '1'
+option api_proxy_parallel '15'
+option api_proxy_max '60'
+option mem_limit_mb '0'
+option idle_timeout '0'
+    option cafile ''
+    option fake_sni ''
+    option override_proxy_address ''
+
+    # Browser spoofing — leave empty to use binary built-in defaults.
+    # Choose a preset in the LuCI web interface, or set manually here.
+    # Preset: Opera 130 / Chrome 146 (Windows)
+    # option api_client_version 'Stable 130.0.5847.12'
+    # option api_client_type    'se0316'
+    # option api_user_agent     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 OPR/130.0.0.0'
+
+    # Preset: Opera 114 / Chrome 128 (Windows) — binary default
+    # option api_client_version 'Stable 114.0.5282.21'
+    # option api_client_type    'se0316'
+    # option api_user_agent     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 OPR/114.0.0.0'
+
+    # Preset: Opera 100 / Chrome 114 (Windows)
+    # option api_client_version 'Stable 100.0.4896.127'
+    # option api_client_type    'se0316'
+    # option api_user_agent     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 OPR/100.0.0.0'
+
+    # Preset: Opera 90 / Chrome 104 (macOS)
+    # option api_client_version 'Stable 90.0.4480.54'
+    # option api_client_type    'se0316'
+    # option api_user_agent     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36 OPR/90.0.0.0'
