@@ -12,6 +12,22 @@ The targeted package matrix includes x86_64, AArch64 (generic, Cortex-A53 and Co
 
 nFPM is not used.
 
+## ELF size and memory trade-offs
+
+Go binaries are already built with `-trimpath -ldflags="-s -w -buildid="`.
+The CI additionally attempts UPX on x86_64 only; it checks UPX integrity
+and executes the packed binary's `-version` command before packaging.
+If UPX refuses the executable or yields no size reduction, CI keeps the
+uncompressed stripped ELF.
+
+MIPS and MIPSel stay stripped but **not UPX packed** by default. UPX
+decompression can increase startup RAM usage, and x86 smoke tests cannot
+establish compatibility with a router's MIPS kernel. Before enabling UPX for
+MIPS release packages, measure uncompressed/packed file size, `VmRSS`,
+startup time and successful proxy traffic on a representative OpenWrt device.
+The optional helper `sh tools/pack-upx.sh path/to/binary` allows local
+experiments without altering release defaults.
+
 ## CI pipeline
 
 ```text
