@@ -26,7 +26,7 @@ jobs:
           cache: true
 
       - name: Install checks
-        run: sudo apt-get update && sudo apt-get install -y jq file binutils
+        run: sudo apt-get update && sudo apt-get install -y jq file binutils qemu-user
 
       - uses: owfeed/owfeed/setup@v0.5.1
         with:
@@ -55,7 +55,7 @@ jobs:
           readelf -h build/opera-proxy-mips | grep -E 'Class:.*ELF32|Data:.*big endian|Machine:.*MIPS'
           readelf -h build/opera-proxy-mipsle | grep -E 'Class:.*ELF32|Data:.*little endian|Machine:.*MIPS'
 
-      - name: UPX ROM-size optimization (x86_64 verified only)
+      - name: UPX ROM-size optimization (x86_64 and ARM, with emulation checks)
         shell: bash
         run: |
           set -euxo pipefail
@@ -66,6 +66,9 @@ jobs:
           tar -xJf /tmp/upx.tar.xz -C /tmp/upx-bin
           export UPX_BIN="/tmp/upx-bin/upx-${UPX_VERSION}-amd64_linux/upx"
           sh tools/pack-upx.sh build/opera-proxy-amd64 run-version
+          PACK_TEST_RUNNER=qemu-arm sh tools/pack-upx.sh build/opera-proxy-arm run-version
+          PACK_TEST_RUNNER=qemu-aarch64 sh tools/pack-upx.sh build/opera-proxy-arm64 run-version
+          # UPX may not support every Go ELF on every architecture; unsupported files stay stripped.
           # MIPS32 remains uncompressed until real-device ROM/RAM/startup testing.
 
       - name: Stage OpenWrt roots
