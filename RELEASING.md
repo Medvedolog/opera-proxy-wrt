@@ -7,8 +7,7 @@ The fork builds the local patched `opera-proxy` core and LuCI payload from one s
 - OpenWrt 25.12 — native APKv3
 - OpenWrt 24.10 — native IPK
 
-Architectures currently staged and built include x86_64, ARMv7, AArch64,
-MIPS/MIPSel 32-bit and MIPS/MIPSel 64-bit. MIPS builds are pure Go
+The targeted package matrix includes x86_64, AArch64 (generic, Cortex-A53 and Cortex-A72), ARMv7 (Cortex-A7 NEON/VFPv4 and Cortex-A9 VFPv3-D16), and 32-bit MIPS/MIPSel 24kc. MIPS builds are pure Go
 (`CGO_ENABLED=0`) with soft-float targets for broad router compatibility.
 
 nFPM is not used.

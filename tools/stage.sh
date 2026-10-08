@@ -25,10 +25,8 @@ PKG_VERSION="${BASE_VERSION}-r${REV}"
 : "${BIN_ARM:?BIN_ARM is required}"
 : "${BIN_MIPS:?BIN_MIPS is required}"
 : "${BIN_MIPSLE:?BIN_MIPSLE is required}"
-: "${BIN_MIPS64:?BIN_MIPS64 is required}"
-: "${BIN_MIPS64LE:?BIN_MIPS64LE is required}"
 
-for b in "$BIN_AMD64" "$BIN_ARM64" "$BIN_ARM" "$BIN_MIPS" "$BIN_MIPSLE" "$BIN_MIPS64" "$BIN_MIPS64LE"; do
+for b in "$BIN_AMD64" "$BIN_ARM64" "$BIN_ARM" "$BIN_MIPS" "$BIN_MIPSLE"; do
     [ -s "$b" ] || { echo "binary missing or empty: $b" >&2; exit 1; }
 done
 
@@ -49,22 +47,14 @@ stage_arch() {
     chmod 0644 "$dst/etc/config/opera-proxy"         "$dst/usr/share/luci/menu.d/luci-app-opera-proxy.json"         "$dst/usr/share/rpcd/acl.d/luci-app-opera-proxy.json"         "$dst/www/luci-static/resources/view/opera-proxy/config.js"
 }
 
-for arch in aarch64_generic aarch64_cortex-a53 aarch64_cortex-a72 aarch64_cortex-a76; do
+for arch in aarch64_generic aarch64_cortex-a53 aarch64_cortex-a72; do
     stage_arch "$arch" "$BIN_ARM64"
 done
-for arch in arm_cortex-a7 arm_cortex-a7_neon-vfpv4 arm_cortex-a7_vfpv4 arm_cortex-a9 arm_cortex-a9_neon arm_cortex-a9_vfpv3-d16; do
+for arch in arm_cortex-a7_neon-vfpv4 arm_cortex-a9_vfpv3-d16; do
     stage_arch "$arch" "$BIN_ARM"
 done
-for arch in mips_24kc mips_4kec mips_mips32; do
-    stage_arch "$arch" "$BIN_MIPS"
-done
-for arch in mipsel_24kc mipsel_24kc_24kf mipsel_74kc mipsel_mips32; do
-    stage_arch "$arch" "$BIN_MIPSLE"
-done
-for arch in mips64_mips64r2 mips64_octeonplus; do
-    stage_arch "$arch" "$BIN_MIPS64"
-done
-stage_arch mips64el_mips64r2 "$BIN_MIPS64LE"
+stage_arch mips_24kc "$BIN_MIPS"
+stage_arch mipsel_24kc "$BIN_MIPSLE"
 stage_arch x86_64 "$BIN_AMD64"
 
 for s in postinst prerm; do

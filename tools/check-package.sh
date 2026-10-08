@@ -2,7 +2,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-for arch in x86_64 mips_24kc mipsel_24kc mips64_mips64r2 mips64el_mips64r2; do
+for arch in aarch64_generic aarch64_cortex-a53 aarch64_cortex-a72 arm_cortex-a7_neon-vfpv4 arm_cortex-a9_vfpv3-d16 mips_24kc mipsel_24kc x86_64; do
     find "dist/$arch" -maxdepth 1 -type f \( -name 'luci-app-opera-proxy_*.ipk' -o -name 'luci-app-opera-proxy-*.apk' \) | grep -q .
 done
 

@@ -50,18 +50,14 @@ jobs:
           GOARCH=arm GOARM=7 go build "${COMMON[@]}" -o build/opera-proxy-arm .
           GOARCH=mips GOMIPS=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips .
           GOARCH=mipsle GOMIPS=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mipsle .
-          GOARCH=mips64 GOMIPS64=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips64 .
-          GOARCH=mips64le GOMIPS64=softfloat go build "${COMMON[@]}" -o build/opera-proxy-mips64le .
 
           file build/*
           readelf -h build/opera-proxy-mips | grep -E 'Class:.*ELF32|Data:.*big endian|Machine:.*MIPS'
           readelf -h build/opera-proxy-mipsle | grep -E 'Class:.*ELF32|Data:.*little endian|Machine:.*MIPS'
-          readelf -h build/opera-proxy-mips64 | grep -E 'Class:.*ELF64|Data:.*big endian|Machine:.*MIPS'
-          readelf -h build/opera-proxy-mips64le | grep -E 'Class:.*ELF64|Data:.*little endian|Machine:.*MIPS'
 
       - name: Stage OpenWrt roots
         run: |
-          BIN_AMD64="$PWD/build/opera-proxy-amd64"           BIN_ARM64="$PWD/build/opera-proxy-arm64"           BIN_ARM="$PWD/build/opera-proxy-arm"           BIN_MIPS="$PWD/build/opera-proxy-mips"           BIN_MIPSLE="$PWD/build/opera-proxy-mipsle"           BIN_MIPS64="$PWD/build/opera-proxy-mips64"           BIN_MIPS64LE="$PWD/build/opera-proxy-mips64le"           ./tools/stage.sh
+          BIN_AMD64="$PWD/build/opera-proxy-amd64"           BIN_ARM64="$PWD/build/opera-proxy-arm64"           BIN_ARM="$PWD/build/opera-proxy-arm"           BIN_MIPS="$PWD/build/opera-proxy-mips"           BIN_MIPSLE="$PWD/build/opera-proxy-mipsle"           ./tools/stage.sh
 
       - name: Build APKv3 and IPK with owfeed
         run: |
