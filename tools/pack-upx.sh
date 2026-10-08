@@ -24,7 +24,7 @@ if [ "$after" -ge "$before" ]; then
 fi
 case "${2:-}" in
     run-version)
-        if ! "$TMP" -version >/dev/null; then
+        if ! ${PACK_TEST_RUNNER:-} "$TMP" -version >/dev/null; then
             echo "UPX-packed binary failed version smoke test; original retained" >&2
             exit 1
         fi ;;
