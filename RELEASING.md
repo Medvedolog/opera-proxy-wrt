@@ -15,10 +15,13 @@ nFPM is not used.
 ## ELF size and memory trade-offs
 
 Go binaries are already built with `-trimpath -ldflags="-s -w -buildid="`.
-The CI additionally attempts UPX on x86_64 only; it checks UPX integrity
+The CI attempts UPX on x86_64, ARMv7 and AArch64; it checks UPX integrity
 and executes the packed binary's `-version` command before packaging.
+ARM target binaries are smoke-tested using qemu-arm or qemu-aarch64 respectively.
 If UPX refuses the executable or yields no size reduction, CI keeps the
-uncompressed stripped ELF.
+uncompressed stripped ELF. These are emulated smoke tests, not a guarantee of
+behavior on every OpenWrt kernel; device-level RAM and connectivity testing is
+recommended before treating ARM UPX as a supported production default.
 
 MIPS and MIPSel stay stripped but **not UPX packed** by default. UPX
 decompression can increase startup RAM usage, and x86 smoke tests cannot
