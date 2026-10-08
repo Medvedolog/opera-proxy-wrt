@@ -2,7 +2,7 @@
 
 # Opera Proxy for OpenWrt
 
-### Opera VPN через SOCKS5 / HTTP · LuCI · автоматическое восстановление соединения
+### Прокси-сервер для OpenWrt с выходом через Opera VPN, настройкой в LuCI и резервным доступом к API
 
 [![Release](https://img.shields.io/github/v/release/Medvedolog/opera-proxy-wrt?style=for-the-badge&label=RELEASE&color=8b5cf6)](https://github.com/Medvedolog/opera-proxy-wrt/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/Medvedolog/opera-proxy-wrt/ci.yml?branch=master&style=for-the-badge&label=BUILD&color=22c55e)](https://github.com/Medvedolog/opera-proxy-wrt/actions/workflows/ci.yml)
