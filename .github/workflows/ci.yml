@@ -55,6 +55,19 @@ jobs:
           readelf -h build/opera-proxy-mips | grep -E 'Class:.*ELF32|Data:.*big endian|Machine:.*MIPS'
           readelf -h build/opera-proxy-mipsle | grep -E 'Class:.*ELF32|Data:.*little endian|Machine:.*MIPS'
 
+      - name: UPX ROM-size optimization (x86_64 verified only)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          UPX_VERSION=5.2.1
+          curl -fL --retry 3 -o /tmp/upx.tar.xz \
+            "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz"
+          mkdir -p /tmp/upx-bin
+          tar -xJf /tmp/upx.tar.xz -C /tmp/upx-bin
+          export UPX_BIN="/tmp/upx-bin/upx-${UPX_VERSION}-amd64_linux/upx"
+          sh tools/pack-upx.sh build/opera-proxy-amd64 run-version
+          # MIPS32 remains uncompressed until real-device ROM/RAM/startup testing.
+
       - name: Stage OpenWrt roots
         run: |
           BIN_AMD64="$PWD/build/opera-proxy-amd64"           BIN_ARM64="$PWD/build/opera-proxy-arm64"           BIN_ARM="$PWD/build/opera-proxy-arm"           BIN_MIPS="$PWD/build/opera-proxy-mips"           BIN_MIPSLE="$PWD/build/opera-proxy-mipsle"           ./tools/stage.sh
