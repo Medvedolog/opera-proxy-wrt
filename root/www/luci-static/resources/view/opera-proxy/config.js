@@ -138,7 +138,7 @@ var FIELD_HELP = {
     'Bootstrap DNS': 'Resolver used while bootstrapping SurfEasy/Opera API access. DoT and DoH can help when local DNS is filtered or poisoned.',
     'Upstream proxy': 'Optional proxy used for Opera tunnel traffic itself. Leave empty for a direct connection to selected Opera endpoints.',
     'API proxy': 'Optional explicit proxy used only for SurfEasy/Opera API registration and discovery. Useful when the API is blocked but tunnel endpoints are reachable.',
-    'Automatic community API fallback': 'If direct API access fails, automatically fetch public proxy lists and try API registration through them. No RouterRich MAC/vendor gate is used.',
+    'Automatic community API fallback': 'If direct API access fails, automatically try public proxy lists to restore registration and endpoint discovery.',
     'Fallback parallelism': 'Number of community API proxy candidates tested concurrently. Larger values are faster but consume more RAM, sockets and bandwidth.',
     'Fallback candidate limit': 'Maximum number of community proxy candidates considered in one fallback round. Lower this on low-RAM routers.',
     'API proxy list file': 'Optional local text file with extra HTTP/SOCKS proxies used for API fallback, one proxy per line.',
