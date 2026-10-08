@@ -2,7 +2,7 @@ name: OpenWrt owfeed CI
 
 on:
   push:
-    branches: [master, dev/ru-resilience]
+    branches: [master, dev/ru-resilience, dev/trim-target-matrix]
     tags: ['v[0-9]*', '[0-9]*']
   pull_request:
   workflow_dispatch:
