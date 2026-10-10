@@ -127,41 +127,41 @@ function parseCountryCsv(text) {
 }
 
 var FIELD_HELP = {
-    'Enable service': 'Starts Opera Proxy automatically through procd. Disable this only when you want the package installed but the proxy stopped.',
-    'Country': 'Preferred Opera VPN region. This influences which SurfEasy/Opera exit pool is requested. EU is the safest general default.',
-    'SOCKS5 mode': 'Enabled: listen as SOCKS5. Disabled: listen as HTTP proxy. SOCKS5 is usually preferable for applications that support remote DNS through the proxy.',
-    'Listen address': 'Local address and port exposed by opera-proxy, for example 127.0.0.1:18080. Keep 127.0.0.1 unless LAN clients must connect directly.',
-    'Verbosity': 'Log detail level passed to the binary. Higher values produce more diagnostic output and more log noise.',
-    'Request timeout': 'Maximum time for API and proxy operations before they are treated as failed. Increase only on very slow or unstable links.',
-    'Endpoint refresh interval': 'How often Opera proxy endpoints are rediscovered. Shorter values refresh more often but create more API traffic.',
-    'Server selection': 'How a working Opera endpoint is chosen: fastest probes candidates, random spreads choices, first uses the first usable endpoint.',
-    'Bootstrap DNS': 'Resolver used while bootstrapping SurfEasy/Opera API access. DoT and DoH can help when local DNS is filtered or poisoned.',
-    'Upstream proxy': 'Optional proxy used for Opera tunnel traffic itself. Leave empty for a direct connection to selected Opera endpoints.',
-    'API proxy': 'Optional explicit proxy used only for SurfEasy/Opera API registration and discovery. Useful when the API is blocked but tunnel endpoints are reachable.',
-    'Automatic community API fallback': 'If direct API access fails, automatically try public proxy lists to restore registration and endpoint discovery.',
-    'Fallback parallelism': 'Number of community API proxy candidates tested concurrently. Larger values are faster but consume more RAM, sockets and bandwidth.',
-    'Fallback candidate limit': 'Maximum number of community proxy candidates considered in one fallback round. Lower this on low-RAM routers.',
-    'API proxy list file': 'Optional local text file with extra HTTP/SOCKS proxies used for API fallback, one proxy per line.',
-    'API proxy list URL': 'Optional remote list of extra proxy candidates for API fallback. Leave empty unless you maintain or trust a specific list.',
-    'Go memory soft limit (MiB)': 'Soft memory target for the Go runtime. 0 disables it. On old MIPS routers a moderate limit can reduce memory pressure.',
-    'Tunnel idle timeout': 'Closes tunnels that stay inactive for this duration. 0 disables the timeout. Useful to reclaim stale connections on small routers.',
-    'CA file': 'Custom CA bundle used for TLS verification. Usually leave empty to use the system CA bundle.',
-    'Fake SNI': 'Advanced compatibility override for the API TLS bootstrap path. Leave empty unless you know the exact workaround you need.',
-    'Override proxy address': 'Forces a specific Opera upstream endpoint instead of discovered addresses. Diagnostic/advanced option; normally leave empty.',
-    'Browser profile preset': 'Convenience preset for the Opera/Chrome identity sent to the SurfEasy API. It fills the three identity fields below.',
-    'Client version': 'Opera client version string reported to the SurfEasy API. Leave empty to use the binary default.',
-    'Client type': 'SurfEasy client type identifier, normally se0316. Change only when testing API compatibility.',
-    'User-Agent string': 'Browser User-Agent sent to SurfEasy. Leave empty to use the binary default or select a preset above.',
-    'Runtime state': 'Live process status, memory use, selected country, listener and browser identity. Refreshed automatically.',
-    'Actions': 'Start, stop or restart the service, or run the five-service connectivity test through the current proxy.',
-    'Live log output': 'Recent opera-proxy messages from logread. Use this when discovery, fallback or upstream TLS fails.'
+    'Включить службу': 'Starts Opera Proxy automatically through procd. Disable this only when you want the package installed but the proxy stopped.',
+    'Регион': 'Preferred Opera VPN region. This influences which SurfEasy/Opera exit pool is requested. EU is the safest general default.',
+    'Режим SOCKS5': 'Enabled: listen as SOCKS5. Disabled: listen as HTTP proxy. SOCKS5 is usually preferable for applications that support remote DNS through the proxy.',
+    'Адрес прослушивания': 'Local address and port exposed by opera-proxy, for example 127.0.0.1:18080. Keep 127.0.0.1 unless LAN clients must connect directly.',
+    'Уровень журнала': 'Log detail level passed to the binary. Higher values produce more diagnostic output and more log noise.',
+    'Таймаут запроса': 'Maximum time for API and proxy operations before they are treated as failed. Increase only on very slow or unstable links.',
+    'Интервал обновления': 'How often Opera proxy endpoints are rediscovered. Shorter values refresh more often but create more API traffic.',
+    'Выбор сервера': 'How a working Opera endpoint is chosen: fastest probes candidates, random spreads choices, first uses the first usable endpoint.',
+    'Начальный DNS': 'Resolver used while bootstrapping SurfEasy/Opera API access. DoT and DoH can help when local DNS is filtered or poisoned.',
+    'Внешний прокси': 'Optional proxy used for Opera tunnel traffic itself. Leave empty for a direct connection to selected Opera endpoints.',
+    'Прокси для API': 'Optional explicit proxy used only for SurfEasy/Opera API registration and discovery. Useful when the API is blocked but tunnel endpoints are reachable.',
+    'Автоматический резервный доступ к API': 'If direct API access fails, automatically try public proxy lists to restore registration and endpoint discovery.',
+    'Параллельные проверки': 'Number of community API proxy candidates tested concurrently. Larger values are faster but consume more RAM, sockets and bandwidth.',
+    'Лимит резервных прокси': 'Maximum number of community proxy candidates considered in one fallback round. Lower this on low-RAM routers.',
+    'Файл списка прокси API': 'Optional local text file with extra HTTP/SOCKS proxies used for API fallback, one proxy per line.',
+    'Адрес списка прокси API': 'Optional remote list of extra proxy candidates for API fallback. Leave empty unless you maintain or trust a specific list.',
+    'Лимит памяти Go (МиБ)': 'Soft memory target for the Go runtime. 0 disables it. On old MIPS routers a moderate limit can reduce memory pressure.',
+    'Таймаут простоя туннеля': 'Closes tunnels that stay inactive for this duration. 0 disables the timeout. Useful to reclaim stale connections on small routers.',
+    'Файл сертификатов CA': 'Custom CA bundle used for TLS verification. Usually leave empty to use the system CA bundle.',
+    'Подмена SNI': 'Advanced compatibility override for the API TLS bootstrap path. Leave empty unless you know the exact workaround you need.',
+    'Фиксированный сервер Opera': 'Forces a specific Opera upstream endpoint instead of discovered addresses. Diagnostic/advanced option; normally leave empty.',
+    'Профиль браузера': 'Convenience preset for the Opera/Chrome identity sent to the SurfEasy API. It fills the three identity fields below.',
+    'Версия клиента': 'Opera client version string reported to the SurfEasy API. Leave empty to use the binary default.',
+    'Тип клиента': 'SurfEasy client type identifier, normally se0316. Change only when testing API compatibility.',
+    'Строка User-Agent': 'Browser User-Agent sent to SurfEasy. Leave empty to use the binary default or select a preset above.',
+    'Состояние процесса': 'Live process status, memory use, selected country, listener and browser identity. Refreshed automatically.',
+    'Управление': 'Start, stop or restart the service, or run the five-service connectivity test through the current proxy.',
+    'Журнал службы': 'Recent opera-proxy messages from logread. Use this when discovery, fallback or upstream TLS fails.'
 };
 
 var SECTION_HELP = {
-    'Live Status': 'Current process state and quick service controls. This section contains no persistent settings.',
-    'Configuration': 'Main runtime and resilience settings. Most users only need country, proxy mode and listen address.',
-    'Browser Identity (Spoofing)': 'SurfEasy/Opera API client identity overrides. Keep the defaults unless a server-side compatibility change requires another profile.',
-    'Diagnostics': 'On-demand connectivity tests and logs. Safe to keep collapsed during normal operation.'
+    'Состояние': 'Current process state and quick service controls. This section contains no persistent settings.',
+    'Настройки': 'Main runtime and resilience settings. Most users only need country, proxy mode and listen address.',
+    'Профиль браузера': 'SurfEasy/Opera API client identity overrides. Keep the defaults unless a server-side compatibility change requires another profile.',
+    'Диагностика': 'On-demand connectivity tests and logs. Safe to keep collapsed during normal operation.'
 };
 
 function decorateHelp(root) {
@@ -223,7 +223,7 @@ function makeSectionsCollapsible(root) {
         heading.appendChild(chevron);
 
         var body = Array.prototype.filter.call(section.children, function(el) { return el !== heading; });
-        var defaultOpen = (name === 'Live Status');
+        var defaultOpen = (name === 'Состояние');
         var open = Object.prototype.hasOwnProperty.call(saved, name) ? !!saved[name] : defaultOpen;
 
         function apply() {
@@ -396,7 +396,7 @@ return view.extend({
         return ui.createHandlerFn(this, function(ev) {
             if (ev) ev.preventDefault();
 
-            this.setActionState(true, 'Testing Telegram API, GitHub, Claude, YouTube and ChatGPT through Opera Proxy ...');
+            this.setActionState(true, 'Проверяем доступность пяти сервисов через Opera Proxy...');
 
             return fs.exec_direct('/usr/libexec/opera-proxy-probe', [], 'text')
                 .then(L.bind(function(out) {
@@ -424,13 +424,13 @@ return view.extend({
                         var mark = good ? '✓' : (partial ? '!' : '✗');
                         var detail;
                         if (r.status === 'proxy_down')
-                            detail = 'proxy service is not running';
-                        else if (r.status === 'timeout')
+                            detail = 'служба не запущена';
+                        else if (r.status === 'таймаут')
                             detail = 'timeout';
                         else if (r.status === 'blocked')
-                            detail = 'blocked, HTTP ' + r.code;
+                            detail = 'заблокировано, HTTP ' + r.code;
                         else if (r.status === 'error')
-                            detail = 'probe error';
+                            detail = 'ошибка проверки';
                         else
                             detail = 'HTTP ' + r.code + ', ' + r.ms + ' ms';
 
@@ -439,12 +439,30 @@ return view.extend({
                         }, [ mark + ' ', E('strong', {}, r.name), ' — ' + detail ]);
                     });
 
-                    var summary = ok + '/5 services OK' + (reachable ? ', ' + reachable + ' reachable with unexpected HTTP status' : '');
-                    this.setActionState(false, 'Proxy test: ' + summary);
-                    ui.addNotification(null, E('div', {}, [
-                        E('strong', {}, 'Opera Proxy connectivity: ' + summary),
-                        E('ul', { 'style': 'margin:.5em 0 0 1.2em' }, rows)
-                    ]));
+                    var summary = ok + '/5 доступно' + (reachable ? ', ещё ' + reachable + ' отвечает с другим HTTP-статусом' : '');
+                    this.setActionState(false, 'Проверка: ' + summary);
+                    if (this._testNode) {
+                        var tableRows = results.map(function(r) {
+                            return E('tr', {}, [
+                                E('td', { 'style': 'padding:5px 8px' }, r.name),
+                                E('td', { 'style': 'padding:5px 8px' }, r.status === 'ok' ? 'Доступен' : (r.status === 'reachable' ? 'Отвечает' : 'Ошибка')),
+                                E('td', { 'style': 'padding:5px 8px' }, r.code),
+                                E('td', { 'style': 'padding:5px 8px;text-align:right' }, r.ms + ' мс')
+                            ]);
+                        });
+                        this._testNode.replaceChildren(E('div', { 'style': 'margin:8px 0' }, [
+                            E('strong', {}, 'Проверка соединения: ' + summary),
+                            E('div', { 'style': 'overflow-x:auto;margin-top:6px' }, [
+                                E('table', { 'class': 'table', 'style': 'width:100%;font-size:.9em' }, [
+                                    E('thead', {}, E('tr', {}, [
+                                        E('th', {}, 'Сервис'), E('th', {}, 'Результат'),
+                                        E('th', {}, 'HTTP'), E('th', {}, 'Время')
+                                    ])),
+                                    E('tbody', {}, tableRows)
+                                ])
+                            ])
+                        ]));
+                    }
                     return Promise.all([ this.refreshStatus(), this.refreshLogs() ]);
                 }, this))
                 .catch(L.bind(function(err) {
@@ -460,7 +478,7 @@ return view.extend({
         var o;
 
         // Preset selector — written first in the section
-        o = s.option(form.ListValue, '_browser_preset', 'Browser profile preset');
+        o = s.option(form.ListValue, '_browser_preset', 'Профиль браузера');
         BROWSER_PRESETS.forEach(function(p) { o.value(p.id, p.label); });
         o.rmempty = true;
 
@@ -516,15 +534,15 @@ return view.extend({
             return f;
         }
 
-        makeField('api_client_version', 'Client version',
+        makeField('api_client_version', 'Версия клиента',
             '(binary default: Stable 114.0.5282.21)',
             'Passed as -api-client-version. Leave empty to use the binary built-in default.');
 
-        makeField('api_client_type', 'Client type',
+        makeField('api_client_type', 'Тип клиента',
             '(binary default: se0316)',
             'Passed as -api-client-type.');
 
-        makeField('api_user_agent', 'User-Agent string',
+        makeField('api_user_agent', 'Строка User-Agent',
             '(binary default: OPR/114 UA)',
             'Passed as -api-user-agent. Identifies this client to the SurfEasy API.');
     },
@@ -537,138 +555,139 @@ return view.extend({
             'Opera Proxy for OpenWrt — LuCI panel with runtime status, colored mode badge, browser identity spoofing and built-in proxy test.');
 
         // ── Live Status ─────────────────────────────────────────────
-        s = m.section(form.TypedSection, 'service', 'Live Status');
+        s = m.section(form.TypedSection, 'service', 'Состояние');
         s.anonymous = true;
 
-        o = s.option(form.DummyValue, '_status', 'Runtime state',
+        o = s.option(form.DummyValue, '_status', 'Состояние процесса',
             'Service state, PID, mode, listen address, active browser identity and memory usage.');
         o.rawhtml = true;
         o.cfgvalue = function() {
-            return '<div data-opera-proxy-status="1">Loading status...</div>';
+            return '<div data-opera-proxy-status="1">Загрузка состояния...</div>';
         };
 
-        o = s.option(form.DummyValue, '_actions', 'Actions');
+        o = s.option(form.DummyValue, '_actions', 'Управление');
         o.rawhtml = true;
         o.cfgvalue = function() {
             return [
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-                '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="start">Start</button>',
-                '<button type="button" class="btn cbi-button cbi-button-remove"  data-opera-action="stop">Stop</button>',
-                '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="restart">Restart</button>',
-                '<button type="button" class="btn cbi-button cbi-button-action important" data-opera-action="test">Test proxy</button>',
+                '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="start">Запустить</button>',
+                '<button type="button" class="btn cbi-button cbi-button-remove"  data-opera-action="stop">Остановить</button>',
+                '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="restart">Перезапустить</button>',
+                '<button type="button" class="btn cbi-button cbi-button-action important" data-opera-action="test">Проверить прокси</button>',
                 '</div>',
-                '<div data-opera-action-state="1" style="margin-top:8px;min-height:1.4em;color:var(--text-color-medium,#6b7280)">No action executed yet.</div>'
+                '<div data-opera-action-state="1" style="margin-top:8px;min-height:1.4em;color:var(--text-color-medium,#6b7280)">Действий пока не было.</div>',
+                '<div data-opera-test-results="1" aria-live="polite"></div>'
             ].join('');
         };
 
         // ── Configuration ───────────────────────────────────────────
-        s = m.section(form.TypedSection, 'service', 'Configuration');
+        s = m.section(form.TypedSection, 'service', 'Настройки');
         s.anonymous = true;
 
-        o = s.option(form.Flag, 'enabled', 'Enable service');
+        o = s.option(form.Flag, 'enabled', 'Включить службу');
         o.rmempty = false;
 
-        o = s.option(form.ListValue, 'country', 'Country');
+        o = s.option(form.ListValue, 'country', 'Регион');
         (this._countries || []).forEach(function(entry) {
             o.value(entry.code, entry.code + ' — ' + entry.name);
         });
         o.default = 'EU';
         o.rmempty = false;
 
-        o = s.option(form.Flag, 'socks_mode', 'SOCKS5 mode');
+        o = s.option(form.Flag, 'socks_mode', 'Режим SOCKS5');
         o.default     = '1';
         o.rmempty     = false;
         o.description = 'Enabled = SOCKS5 proxy. Disabled = HTTP proxy.';
 
-        o = s.option(form.Value, 'bind_address', 'Listen address');
+        o = s.option(form.Value, 'bind_address', 'Адрес прослушивания');
         o.datatype   = 'hostport';
         o.placeholder = '127.0.0.1:18080';
         o.rmempty    = false;
 
-        o = s.option(form.Value, 'verbosity', 'Verbosity');
+        o = s.option(form.Value, 'verbosity', 'Уровень журнала');
         o.datatype = 'uinteger';
         o.default  = '20';
         o.rmempty  = false;
 
-        o = s.option(form.Value, 'timeout', 'Request timeout');
+        o = s.option(form.Value, 'timeout', 'Таймаут запроса');
         o.placeholder = '10s';
         o.rmempty     = false;
 
-        o = s.option(form.Value, 'refresh', 'Endpoint refresh interval');
+        o = s.option(form.Value, 'refresh', 'Интервал обновления');
         o.placeholder = '4h';
         o.rmempty     = false;
 
-        o = s.option(form.ListValue, 'server_selection', 'Server selection');
+        o = s.option(form.ListValue, 'server_selection', 'Выбор сервера');
         o.value('fastest', 'fastest');
         o.value('random',  'random');
         o.value('first',   'first');
         o.default = 'fastest';
         o.rmempty = false;
 
-        o = s.option(form.Value, 'bootstrap_dns', 'Bootstrap DNS');
+        o = s.option(form.Value, 'bootstrap_dns', 'Начальный DNS');
         o.placeholder = 'tls://9.9.9.9:853';
         o.default     = 'tls://9.9.9.9:853';
         o.rmempty     = true;
         o.description = 'DNS resolver for SurfEasy API bootstrap. Supports plain (8.8.8.8), DoT (tls://9.9.9.9:853) and DoH (https://...) formats. Passed as -bootstrap-dns.';
 
-        o = s.option(form.Value, 'proxy', 'Upstream proxy');
+        o = s.option(form.Value, 'proxy', 'Внешний прокси');
         o.placeholder = 'socks5://127.0.0.1:1080';
         o.rmempty     = true;
         o.placeholder = 'socks5://127.0.0.1:1080';
         o.rmempty     = true;
 
-        o = s.option(form.Value, 'api_proxy', 'API proxy');
+        o = s.option(form.Value, 'api_proxy', 'Прокси для API');
         o.placeholder = 'http://127.0.0.1:8080';
         o.rmempty     = true;
 
-        o = s.option(form.Flag, 'api_proxy_builtin', 'Automatic community API fallback');
+        o = s.option(form.Flag, 'api_proxy_builtin', 'Автоматический резервный доступ к API');
         o.default = '1';
         o.rmempty = false;
         o.description = 'If direct SurfEasy API access or direct endpoint discovery fails, try public community proxy lists automatically.';
 
-        o = s.option(form.Value, 'api_proxy_parallel', 'Fallback parallelism');
+        o = s.option(form.Value, 'api_proxy_parallel', 'Параллельные проверки');
         o.datatype = 'uinteger';
         o.default = '15';
         o.rmempty = false;
 
-        o = s.option(form.Value, 'api_proxy_max', 'Fallback candidate limit');
+        o = s.option(form.Value, 'api_proxy_max', 'Лимит резервных прокси');
         o.datatype = 'uinteger';
         o.default = '60';
         o.rmempty = false;
 
-        o = s.option(form.Value, 'api_proxy_file', 'API proxy list file');
+        o = s.option(form.Value, 'api_proxy_file', 'Файл списка прокси API');
         o.placeholder = '/etc/opera-proxy/proxies.txt';
         o.rmempty = true;
 
-        o = s.option(form.Value, 'api_proxy_list_url', 'API proxy list URL');
+        o = s.option(form.Value, 'api_proxy_list_url', 'Адрес списка прокси API');
         o.placeholder = 'https://example.net/proxies.txt';
         o.rmempty = true;
 
-        o = s.option(form.Value, 'mem_limit_mb', 'Go memory soft limit (MiB)');
+        o = s.option(form.Value, 'mem_limit_mb', 'Лимит памяти Go (МиБ)');
         o.datatype = 'uinteger';
         o.default = '0';
         o.rmempty = false;
         o.description = '0 disables the runtime memory limit. Useful on low-RAM routers.';
 
-        o = s.option(form.Value, 'idle_timeout', 'Tunnel idle timeout');
+        o = s.option(form.Value, 'idle_timeout', 'Таймаут простоя туннеля');
         o.placeholder = '0';
         o.default = '0';
         o.rmempty = false;
         o.description = '0 disables it; examples: 10m, 30m. Drops silent tunnels after the specified inactivity period.';
 
-        o = s.option(form.Value, 'cafile', 'CA file');
+        o = s.option(form.Value, 'cafile', 'Файл сертификатов CA');
         o.placeholder = '/etc/ssl/certs/ca-certificates.crt';
         o.rmempty     = true;
 
-        o = s.option(form.Value, 'fake_sni', 'Fake SNI');
+        o = s.option(form.Value, 'fake_sni', 'Подмена SNI');
         o.rmempty = true;
 
-        o = s.option(form.Value, 'override_proxy_address', 'Override proxy address');
+        o = s.option(form.Value, 'override_proxy_address', 'Фиксированный сервер Opera');
         o.placeholder = '1.2.3.4:443';
         o.rmempty     = true;
 
         // ── Browser Identity ────────────────────────────────────────
-        s = m.section(form.TypedSection, 'service', 'Browser Identity (Spoofing)');
+        s = m.section(form.TypedSection, 'service', 'Профиль браузера');
         s.anonymous   = true;
         s.description = 'Controls which Opera/Chrome version the proxy reports to the SurfEasy API. ' +
             'Choose a preset to auto-fill all three fields, or select "Custom" to type values manually. ' +
@@ -677,10 +696,10 @@ return view.extend({
         this._makeBrowserSection(s);
 
         // ── Diagnostics ─────────────────────────────────────────────
-        s = m.section(form.TypedSection, 'service', 'Diagnostics');
+        s = m.section(form.TypedSection, 'service', 'Диагностика');
         s.anonymous = true;
 
-        o = s.option(form.DummyValue, '_diag', 'Live log output',
+        o = s.option(form.DummyValue, '_diag', 'Журнал службы',
             'Runs logread only when refreshed manually or after service actions.');
         o.rawhtml = true;
         o.cfgvalue = function() {
@@ -706,6 +725,7 @@ return view.extend({
 
             self._statusNode = nodes.querySelector('[data-opera-proxy-status="1"]');
             self._actionNode = nodes.querySelector('[data-opera-action-state="1"]');
+            self._testNode = nodes.querySelector('[data-opera-test-results="1"]');
             self._logNode    = nodes.querySelector('[data-opera-logs="1"]');
             self._buttons    = [btnStart, btnStop, btnRestart, btnTest];
 
