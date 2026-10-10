@@ -20,7 +20,7 @@ var callInitAction = rpc.declare({
 var BROWSER_PRESETS = [
     {
         id:      'default',
-        label:   'Binary default (Opera 114 / Chrome 128, Windows)',
+        label:   'По умолчанию (Opera 114 / Chrome 128, Windows)',
         version: '',
         type:    '',
         ua:      ''
@@ -55,7 +55,7 @@ var BROWSER_PRESETS = [
     },
     {
         id:      'custom',
-        label:   '[ Custom — fill fields manually below ]',
+        label:   '[ Свой профиль — заполните поля ниже ]',
         version: null,
         type:    null,
         ua:      null
@@ -127,41 +127,41 @@ function parseCountryCsv(text) {
 }
 
 var FIELD_HELP = {
-    'Включить службу': 'Starts Opera Proxy automatically through procd. Disable this only when you want the package installed but the proxy stopped.',
-    'Регион': 'Preferred Opera VPN region. This influences which SurfEasy/Opera exit pool is requested. EU is the safest general default.',
-    'Режим SOCKS5': 'Enabled: listen as SOCKS5. Disabled: listen as HTTP proxy. SOCKS5 is usually preferable for applications that support remote DNS through the proxy.',
-    'Адрес прослушивания': 'Local address and port exposed by opera-proxy, for example 127.0.0.1:18080. Keep 127.0.0.1 unless LAN clients must connect directly.',
-    'Уровень журнала': 'Log detail level passed to the binary. Higher values produce more diagnostic output and more log noise.',
-    'Таймаут запроса': 'Maximum time for API and proxy operations before they are treated as failed. Increase only on very slow or unstable links.',
-    'Интервал обновления': 'How often Opera proxy endpoints are rediscovered. Shorter values refresh more often but create more API traffic.',
-    'Выбор сервера': 'How a working Opera endpoint is chosen: fastest probes candidates, random spreads choices, first uses the first usable endpoint.',
-    'Начальный DNS': 'Resolver used while bootstrapping SurfEasy/Opera API access. DoT and DoH can help when local DNS is filtered or poisoned.',
-    'Внешний прокси': 'Optional proxy used for Opera tunnel traffic itself. Leave empty for a direct connection to selected Opera endpoints.',
-    'Прокси для API': 'Optional explicit proxy used only for SurfEasy/Opera API registration and discovery. Useful when the API is blocked but tunnel endpoints are reachable.',
-    'Автоматический резервный доступ к API': 'If direct API access fails, automatically try public proxy lists to restore registration and endpoint discovery.',
-    'Параллельные проверки': 'Number of community API proxy candidates tested concurrently. Larger values are faster but consume more RAM, sockets and bandwidth.',
-    'Лимит резервных прокси': 'Maximum number of community proxy candidates considered in one fallback round. Lower this on low-RAM routers.',
-    'Файл списка прокси API': 'Optional local text file with extra HTTP/SOCKS proxies used for API fallback, one proxy per line.',
-    'Адрес списка прокси API': 'Optional remote list of extra proxy candidates for API fallback. Leave empty unless you maintain or trust a specific list.',
-    'Лимит памяти Go (МиБ)': 'Soft memory target for the Go runtime. 0 disables it. On old MIPS routers a moderate limit can reduce memory pressure.',
-    'Таймаут простоя туннеля': 'Closes tunnels that stay inactive for this duration. 0 disables the timeout. Useful to reclaim stale connections on small routers.',
-    'Файл сертификатов CA': 'Custom CA bundle used for TLS verification. Usually leave empty to use the system CA bundle.',
-    'Подмена SNI': 'Advanced compatibility override for the API TLS bootstrap path. Leave empty unless you know the exact workaround you need.',
-    'Фиксированный сервер Opera': 'Forces a specific Opera upstream endpoint instead of discovered addresses. Diagnostic/advanced option; normally leave empty.',
-    'Профиль браузера': 'Convenience preset for the Opera/Chrome identity sent to the SurfEasy API. It fills the three identity fields below.',
-    'Версия клиента': 'Opera client version string reported to the SurfEasy API. Leave empty to use the binary default.',
-    'Тип клиента': 'SurfEasy client type identifier, normally se0316. Change only when testing API compatibility.',
-    'Строка User-Agent': 'Browser User-Agent sent to SurfEasy. Leave empty to use the binary default or select a preset above.',
-    'Состояние процесса': 'Live process status, memory use, selected country, listener and browser identity. Refreshed automatically.',
-    'Управление': 'Start, stop or restart the service, or run the five-service connectivity test through the current proxy.',
-    'Журнал службы': 'Recent opera-proxy messages from logread. Use this when discovery, fallback or upstream TLS fails.'
+    'Включить службу': 'Запускает Opera Proxy через procd. Отключение не удаляет пакет.',
+    'Регион': 'Регион серверов Opera VPN. Обычно достаточно EU.',
+    'Режим SOCKS5': 'Включено: SOCKS5, выключено: HTTP. Для удалённого DNS используйте socks5h.',
+    'Адрес прослушивания': 'Локальный IP и порт прокси. 127.0.0.1:18080 доступен только роутеру. Не открывайте порт в WAN.',
+    'Уровень журнала': '10 — отладка, 20 — информация, 30 — предупреждения, 40 — ошибки, 60 — без сообщений.',
+    'Таймаут запроса': 'Предельное ожидание ответа при сетевых операциях.',
+    'Интервал обновления': 'Период обновления авторизации клиента Opera, например 4h.',
+    'Выбор сервера': 'fastest — по скорости; random — случайный; first — первый.',
+    'Начальный DNS': 'DNS для начального доступа к API; поддерживаются обычный DNS, DoT и DoH.',
+    'Внешний прокси': 'Промежуточный прокси для исходящих соединений. Пусто — прямое подключение.',
+    'Прокси для API': 'Отдельный прокси для регистрации и обнаружения серверов SurfEasy, не для пользовательского трафика.',
+    'Автоматический резервный доступ к API': 'При сбое прямого подключения использовать публичные списки прокси для API.',
+    'Параллельные проверки': 'Количество одновременно проверяемых резервных прокси. Большое значение расходует больше памяти.',
+    'Лимит резервных прокси': 'Максимум кандидатов одного цикла поиска.',
+    'Файл списка прокси API': 'Локальный файл со списком дополнительных резервных прокси.',
+    'Адрес списка прокси API': 'URL списка дополнительных резервных прокси.',
+    'Лимит памяти Go (МиБ)': 'Мягкий лимит памяти Go. Значение 0 отключает его.',
+    'Таймаут простоя туннеля': 'Закрывает неактивные туннели; 0 — выключено, пример 10m.',
+    'Файл сертификатов CA': 'Дополнительный файл сертификатов для TLS.',
+    'Подмена SNI': 'Необязательная подмена TLS SNI; без необходимости оставьте пустым.',
+    'Фиксированный сервер Opera': 'Конкретный IP:порт Opera вместо автоматического выбора.',
+    'Профиль браузера': 'Профиль Opera/Chrome для API SurfEasy; заполняет поля ниже.',
+    'Версия клиента': 'Версия браузера Opera для API. Пусто — значение по умолчанию.',
+    'Тип клиента': 'Идентификатор клиента SurfEasy, обычно se0316.',
+    'Строка User-Agent': 'Заголовок User-Agent для SurfEasy; пусто — по умолчанию.',
+    'Состояние процесса': 'Состояние службы, использование памяти, режим и адрес.',
+    'Управление': 'Запуск, остановка, перезапуск и проверка доступности сервисов.',
+    'Журнал службы': 'Последние записи журнала Opera Proxy.'
 };
 
 var SECTION_HELP = {
-    'Состояние': 'Current process state and quick service controls. This section contains no persistent settings.',
-    'Настройки': 'Main runtime and resilience settings. Most users only need country, proxy mode and listen address.',
-    'Профиль браузера': 'SurfEasy/Opera API client identity overrides. Keep the defaults unless a server-side compatibility change requires another profile.',
-    'Диагностика': 'On-demand connectivity tests and logs. Safe to keep collapsed during normal operation.'
+    'Состояние': 'Состояние процесса и управление службой.',
+    'Настройки': 'Основные параметры сети и резервного доступа.',
+    'Профиль браузера': 'Параметры совместимости клиента с API SurfEasy.',
+    'Диагностика': 'Проверка соединения и журнал событий.'
 };
 
 function decorateHelp(root) {
@@ -315,28 +315,28 @@ return view.extend({
     renderStatusHtml: function(rt) {
         var running   = !!rt.pid;
         var modeColor = rt.mode === 'SOCKS5' ? 'var(--primary-color-high, #2563eb)' : 'var(--success-color-medium, #059669)';
-        var verLabel  = rt.clientVersion ? escapeHtml(rt.clientVersion) : '<em>(binary default)</em>';
+        var verLabel  = rt.clientVersion ? escapeHtml(rt.clientVersion) : '<em>(по умолчанию)</em>';
         return [
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;align-items:stretch">',
               '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
-                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Service state</div>',
-                '<div>' + badge(running ? 'Running' : 'Stopped', running ? 'var(--success-color-medium, #16a34a)' : 'var(--error-color-medium, #dc2626)') + '</div>',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Состояние службы</div>',
+                '<div>' + badge(running ? 'Работает' : 'Остановлена', running ? 'var(--success-color-medium, #16a34a)' : 'var(--error-color-medium, #dc2626)') + '</div>',
                 '<div style="margin-top:8px"><strong>PID:</strong> ' + escapeHtml(rt.pid || '-') + '</div>',
                 '<div style="margin-top:4px"><strong>RSS:</strong> ' + formatKBToMB(rt.vmrss) + '</div>',
               '</div>',
               '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
-                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Proxy mode</div>',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Режим прокси</div>',
                 '<div>' + badge(rt.mode, modeColor) + '</div>',
-                '<div style="margin-top:8px"><strong>Listen:</strong> ' + escapeHtml(rt.bind) + '</div>',
-                '<div style="margin-top:4px"><strong>Country:</strong> ' + escapeHtml(rt.country) + '</div>',
+                '<div style="margin-top:8px"><strong>Адрес:</strong> ' + escapeHtml(rt.bind) + '</div>',
+                '<div style="margin-top:4px"><strong>Регион:</strong> ' + escapeHtml(rt.country) + '</div>',
               '</div>',
               '<div style="padding:10px;border:1px solid var(--border-color-medium,rgba(128,128,128,.35));border-radius:10px;background:var(--background-color-low,rgba(128,128,128,.06));color:var(--text-color-highest,inherit)">',
-                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Browser identity</div>',
-                '<div style="font-size:12px;word-break:break-all"><strong>Client ver:</strong> ' + verLabel + '</div>',
+                '<div style="font-size:12px;color:var(--text-color-medium,#6b7280);margin-bottom:6px">Профиль браузера</div>',
+                '<div style="font-size:12px;word-break:break-all"><strong>Версия клиента:</strong> ' + verLabel + '</div>',
                 '<div style="margin-top:8px"><strong>VmSize:</strong> ' + formatKBToMB(rt.vmsize) + '</div>',
               '</div>',
             '</div>',
-            '<div style="margin-top:8px;color:var(--text-color-medium,#6b7280)">Status via <code>pidof opera-proxy</code> and <code>/proc/&lt;pid&gt;/status</code>.</div>'
+            '<div style="margin-top:8px;color:var(--text-color-medium,#6b7280)">Данные из <code>pidof opera-proxy</code> and <code>/proc/&lt;pid&gt;/status</code>.</div>'
         ].join('');
     },
 
@@ -353,14 +353,14 @@ return view.extend({
 
     refreshLogs: function() {
         if (!this._logNode) return Promise.resolve();
-        this._logNode.value = 'Refreshing logs...';
+        this._logNode.value = 'Обновление журнала...';
         return L.resolveDefault(fs.exec_direct('/sbin/logread', ['-e', 'opera-proxy'], 'text'), '')
             .then(L.bind(function(out) {
-                this._logNode.value = String(out || '').trim() || 'No opera-proxy log entries yet.';
+                this._logNode.value = String(out || '').trim() || 'Сообщений Opera Proxy пока нет.';
                 this._logNode.scrollTop = this._logNode.scrollHeight;
             }, this))
             .catch(L.bind(function(err) {
-                this._logNode.value = (err && err.message) ? err.message : 'Unable to read logs.';
+                this._logNode.value = (err && err.message) ? err.message : 'Не удалось прочитать журнал.';
             }, this));
     },
 
@@ -373,7 +373,7 @@ return view.extend({
     handleServiceAction: function(action) {
         return ui.createHandlerFn(this, function(ev) {
             if (ev) ev.preventDefault();
-            this.setActionState(true, 'Executing action: ' + action + ' ...');
+            this.setActionState(true, 'Выполняется действие: ' + action + ' ...');
             return callInitAction('opera-proxy', action)
                 .then(function() {
                     return new Promise(function(r) { window.setTimeout(r, 1500); });
@@ -382,10 +382,10 @@ return view.extend({
                     return Promise.all([ this.refreshStatus(), this.refreshLogs() ]);
                 }, this))
                 .then(L.bind(function() {
-                    this.setActionState(false, 'Last action completed: ' + action);
+                    this.setActionState(false, 'Завершено действие: ' + action);
                 }, this))
                 .catch(L.bind(function(err) {
-                    var msg = (err && err.message) ? err.message : 'Operation failed';
+                    var msg = (err && err.message) ? err.message : 'Ошибка выполнения действия';
                     this.setActionState(false, msg);
                     ui.addNotification(null, E('p', {}, msg));
                 }, this));
@@ -412,7 +412,7 @@ return view.extend({
                     });
 
                     if (!results.length)
-                        throw new Error('Proxy probe returned no results');
+                        throw new Error('Проверка не вернула результатов');
 
                     var ok = 0, reachable = 0;
                     var rows = results.map(function(r) {
@@ -466,7 +466,7 @@ return view.extend({
                     return Promise.all([ this.refreshStatus(), this.refreshLogs() ]);
                 }, this))
                 .catch(L.bind(function(err) {
-                    var msg = (err && err.message) ? err.message : 'Proxy test failed';
+                    var msg = (err && err.message) ? err.message : 'Проверка прокси не удалась';
                     this.setActionState(false, msg);
                     ui.addNotification(null, E('p', {}, msg));
                 }, this));
@@ -559,7 +559,7 @@ return view.extend({
         s.anonymous = true;
 
         o = s.option(form.DummyValue, '_status', 'Состояние процесса',
-            'Service state, PID, mode, listen address, active browser identity and memory usage.');
+            'Состояние службы, PID, mode, listen address, active browser identity and memory usage.');
         o.rawhtml = true;
         o.cfgvalue = function() {
             return '<div data-opera-proxy-status="1">Загрузка состояния...</div>';
