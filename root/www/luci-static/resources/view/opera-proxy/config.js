@@ -425,7 +425,7 @@ return view.extend({
                         var detail;
                         if (r.status === 'proxy_down')
                             detail = 'служба не запущена';
-                        else if (r.status === 'таймаут')
+                        else if (r.status === 'timeout')
                             detail = 'timeout';
                         else if (r.status === 'blocked')
                             detail = 'заблокировано, HTTP ' + r.code;
