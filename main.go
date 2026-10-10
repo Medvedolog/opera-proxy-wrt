@@ -755,6 +755,7 @@ func run() int {
 	// When verbosity >= SILENT, pass io.Discard to NewLogWriter so it returns
 	// a zero-cost nullLogWriter: no goroutine is started, nothing is written.
 	logDst := io.Writer(os.Stderr)
+	if os.Getenv("OPERA_PROXY_NATIVE_SYSLOG") == "1" { logDst = clog.NewSyslogDestination() }
 	if args.verbosity >= clog.SILENT {
 		logDst = io.Discard
 	}
