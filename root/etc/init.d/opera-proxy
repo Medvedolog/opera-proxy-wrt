@@ -75,6 +75,7 @@ start_service() {
     [ -n "$api_client_type" ]        && procd_append_param command -api-client-type       "$api_client_type"
     [ -n "$api_user_agent" ]         && procd_append_param command -api-user-agent        "$api_user_agent"
 
+    procd_set_param env OPERA_PROXY_NATIVE_SYSLOG=1
     procd_set_param respawn 3600 5 5
     procd_set_param stdout 1
     procd_set_param stderr 1
