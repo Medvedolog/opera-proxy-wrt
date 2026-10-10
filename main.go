@@ -1165,7 +1165,7 @@ func run() int {
 		}
 		shutdown = func(context.Context) error { return ln.Close() }
 		mainLogger.Info("Init complete.")
-		go func() { serveErr <- socks.Serve(ln) }()
+		go func() { serveErr <- socks.Serve(handler.WrapSocksListener(ln, socksLogger)) }()
 	} else {
 		h := handler.NewProxyHandler(handlerDialer, proxyLogger, args.idleTimeout)
 		srv := &http.Server{
