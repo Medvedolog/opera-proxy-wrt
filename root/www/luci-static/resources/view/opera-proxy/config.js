@@ -370,15 +370,21 @@ return view.extend({
         return ui.createHandlerFn(this, function(ev) {
             if (ev) ev.preventDefault();
             this.setActionState(true, 'Выполняется действие: ' + action + ' ...');
-            return callInitAction('opera-proxy', action)
+            var operation = Promise.resolve();
+            if (action === 'start' || action === 'restart') {
+                // A fresh install ships disabled. Explicit Start enables and
+                // persists it before requesting procd to launch the service.
+                uci.set('opera-proxy', 'main', 'enabled', '1');
+                operation = uci.save().then(function() { return uci.apply(); })
+                    .then(function() { return callInitAction('opera-proxy', 'enable'); });
+            }
+            return operation.then(function() { return callInitAction('opera-proxy', action); })
                 .then(function() {
-                    return new Promise(function(r) { window.setTimeout(r, 1500); });
+                    return new Promise(function(r) { window.setTimeout(r, 1000); });
                 })
+                .then(L.bind(function() { return this.refreshStatus(); }, this))
                 .then(L.bind(function() {
-                    return this.refreshStatus();
-                }, this))
-                .then(L.bind(function() {
-                    this.setActionState(false, 'Завершено действие: ' + action);
+                    this.setActionState(false, 'Действие выполнено: ' + action);
                 }, this))
                 .catch(L.bind(function(err) {
                     var msg = (err && err.message) ? err.message : 'Ошибка выполнения действия';
@@ -737,7 +743,8 @@ return view.extend({
                 ev.preventDefault();
                 self.setActionState(true, 'Отключаем службу...');
                 uci.set('opera-proxy', 'main', 'enabled', '0');
-                uci.save().then(function() { return callInitAction('opera-proxy', 'stop'); })
+                uci.save().then(function() { return uci.apply(); })
+                    .then(function() { return callInitAction('opera-proxy', 'stop'); })
                     .then(function() { return callInitAction('opera-proxy', 'disable'); })
                     .then(function() {
                         self.setActionState(false, 'Служба остановлена, автозапуск отключён.');
