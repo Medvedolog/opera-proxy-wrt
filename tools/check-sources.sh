@@ -30,3 +30,13 @@ grep -q "makeSectionsCollapsible" root/www/luci-static/resources/view/opera-prox
 grep -q "FIELD_HELP" root/www/luci-static/resources/view/opera-proxy/config.js
 grep -q "data-tooltip" root/www/luci-static/resources/view/opera-proxy/config.js
 grep -q "localStorage" root/www/luci-static/resources/view/opera-proxy/config.js
+
+# Guardrails for white-list / disconnected network conditions.
+grep -q "config_get init_retries" root/etc/init.d/opera-proxy
+grep -q "command -api-proxy-parallel" root/etc/init.d/opera-proxy
+grep -q "command -api-proxy-max" root/etc/init.d/opera-proxy
+grep -q "api-proxy-builtin=\$api_proxy_builtin" root/etc/init.d/opera-proxy
+! grep -q "procd_set_param respawn" root/etc/init.d/opera-proxy
+grep -q "option enabled '0'" root/etc/config/opera-proxy
+grep -q "data-opera-action=\\\"disable\\\"" root/www/luci-static/resources/view/opera-proxy/config.js
+! grep -q "exec_direct('/usr/bin/opera-proxy', \\['-list-countries'\\]" root/www/luci-static/resources/view/opera-proxy/config.js
