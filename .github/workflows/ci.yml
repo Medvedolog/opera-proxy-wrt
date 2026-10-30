@@ -176,3 +176,22 @@ jobs:
       owfeed-version: v0.5.1
       artifact: opera-proxy-owfeed-packages
       verify-with: keys/opera-proxy-release.pub
+
+  mark-r6-prerelease:
+    name: Mark r6 as requiring testing
+    needs: [release]
+    if: github.ref == 'refs/tags/v1.30.0-6'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Label release as prerelease and publish testing notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit v1.30.0-6 \
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease \
+            --title "v1.30.0-6 — Требует тестирования" \
+            --notes-file docs/releases/v1.30.0-6.md
