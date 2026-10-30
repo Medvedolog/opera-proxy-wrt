@@ -1,0 +1,34 @@
+name: Publish r6 testing release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/releases/v1.30.0-6.md'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  dispatch-tag-build:
+    name: Create fixed testing tag and run signed release pipeline
+    if: github.repository == 'Medvedolog/opera-proxy-wrt'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure testing tag points at this merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="refs/tags/v1.30.0-6"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-6" >/dev/null 2>&1; then
+            echo "::error::Tag v1.30.0-6 already exists; refusing to overwrite."
+            exit 1
+          fi
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="$ref" -f sha="$GITHUB_SHA"
+          # Tag creation using GITHUB_TOKEN does not fire a push-tag workflow.
+          # workflow_dispatch is explicitly allowed to trigger another workflow.
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref v1.30.0-6
