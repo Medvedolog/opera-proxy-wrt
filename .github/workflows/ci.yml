@@ -120,7 +120,7 @@ jobs:
             file /usr/libexec/opera-proxy-probe
             exec sh -n /usr/libexec/opera-proxy-probe
             exec /usr/bin/opera-proxy -version >/dev/null
-            exec uci -q get opera-proxy.main.api_proxy_builtin | grep -qx 1
+            exec uci -q get opera-proxy.main.api_proxy_builtin | grep -qx 0
 
       - name: OpenWrt 24.10 IPK
         uses: owfeed/owlab/action@v0.6.5
@@ -137,7 +137,7 @@ jobs:
             file /usr/libexec/opera-proxy-probe
             exec sh -n /usr/libexec/opera-proxy-probe
             exec /usr/bin/opera-proxy -version >/dev/null
-            exec uci -q get opera-proxy.main.api_proxy_max | grep -qx 60
+            exec uci -q get opera-proxy.main.api_proxy_max | grep -qx 10
 
 
   release-preflight:
