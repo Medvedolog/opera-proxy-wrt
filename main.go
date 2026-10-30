@@ -241,7 +241,7 @@ func parse_args() *CLIArgs {
 			"Supported schemes are: dns://, https://, tls://, tcp://. "+
 			"Examples: https://1.1.1.1/dns-query,tls://9.9.9.9:853")
 	flag.DurationVar(&args.refresh, "refresh", 4*time.Hour, "login refresh interval")
-	flag.DurationVar(&args.refreshRetry, "refresh-retry", 5*time.Second, "login refresh retry interval")
+	flag.DurationVar(&args.refreshRetry, "refresh-retry", time.Minute, "login refresh retry interval")
 	flag.IntVar(&args.initRetries, "init-retries", 2, "number of attempts for initialization steps, zero for unlimited retry")
 	flag.DurationVar(&args.initRetryInterval, "init-retry-interval", 30*time.Second, "delay between initialization retries")
 	flag.StringVar(&args.caFile, "cafile", "", "use custom CA certificate bundle file")
