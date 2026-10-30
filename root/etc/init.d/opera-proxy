@@ -55,6 +55,15 @@ start_service() {
     config_get api_client_type      main api_client_type        ''
     config_get api_user_agent       main api_user_agent         ''
 
+    # Resource budget applies even to upgraded installations with legacy UCI values.
+    case "$init_retries" in ''|*[!0-9]*) init_retries=2 ;; esac
+    [ "$init_retries" -gt 2 ] || [ "$init_retries" -eq 0 ] && init_retries=2
+    case "$api_proxy_parallel" in ''|*[!0-9]*) api_proxy_parallel=2 ;; esac
+    [ "$api_proxy_parallel" -gt 2 ] && api_proxy_parallel=2
+    [ "$api_proxy_parallel" -lt 1 ] && api_proxy_parallel=1
+    case "$api_proxy_max" in ''|*[!0-9]*) api_proxy_max=10 ;; esac
+    [ "$api_proxy_max" -gt 10 ] || [ "$api_proxy_max" -eq 0 ] && api_proxy_max=10
+
     procd_open_instance
     procd_set_param command "$PROG"
     procd_append_param command -country                    "$country"
@@ -72,7 +81,7 @@ start_service() {
     procd_append_param command -api-proxy-max "$api_proxy_max"
     procd_append_param command -mem-limit-mb "$mem_limit_mb"
     procd_append_param command -idle-timeout "$idle_timeout"
-    [ "$api_proxy_builtin" -eq 1 ] && procd_append_param command -api-proxy-builtin
+    procd_append_param command "-api-proxy-builtin=$api_proxy_builtin"
 
     [ "$socks_mode" -eq 1 ]          && procd_append_param command -socks-mode
     [ -n "$bootstrap_dns" ]          && procd_append_param command -bootstrap-dns          "$bootstrap_dns"
