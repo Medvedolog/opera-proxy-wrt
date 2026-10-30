@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           ref="refs/tags/v1.30.0-6"
-          existing="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-6" --jq '.object.sha' 2>/dev/null || true)"
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-6" --jq '.object.sha // empty' 2>/dev/null || true)"
           if [ -n "$existing" ]; then
             if [ "$existing" != "$GITHUB_SHA" ]; then
               echo "::error::Existing tag points to another commit: $existing"
