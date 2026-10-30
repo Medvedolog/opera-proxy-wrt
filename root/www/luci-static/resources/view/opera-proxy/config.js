@@ -263,20 +263,16 @@ return view.extend({
     _countries:      null,
 
     load: function() {
-        return Promise.all([
-            uci.load('opera-proxy'),
-            L.resolveDefault(fs.exec_direct('/usr/bin/opera-proxy', ['-list-countries'], 'text'), '')
-        ]).then(L.bind(function(res) {
-            var parsed = parseCountryCsv(res[1]);
-            if (!parsed.length) {
-                parsed = [
-                    { code: 'EU', name: 'Europe' },
-                    { code: 'AM', name: 'Americas' },
-                    { code: 'AS', name: 'Asia' }
-                ];
-            }
-            this._countries = parsed;
-            return res;
+        // Opening LuCI must never trigger SurfEasy API discovery.
+        return uci.load('opera-proxy').then(L.bind(function() {
+            var region = uci.get('opera-proxy', 'main', 'country') || 'EU';
+            this._countries = [
+                { code: 'EU', name: 'Европа' },
+                { code: 'AM', name: 'Америка' },
+                { code: 'AS', name: 'Азия' }
+            ];
+            if (!this._countries.some(function(x) { return x.code === region; }))
+                this._countries.push({ code: region, name: region });
         }, this));
     },
 
@@ -354,7 +350,7 @@ return view.extend({
     refreshLogs: function() {
         if (!this._logNode) return Promise.resolve();
         this._logNode.value = 'Обновление журнала...';
-        return L.resolveDefault(fs.exec_direct('/sbin/logread', ['-e', 'opera-proxy'], 'text'), '')
+        return L.resolveDefault(fs.exec_direct('/sbin/logread', ['-e', 'opera-proxy', '-l', '80'], 'text'), '')
             .then(L.bind(function(out) {
                 this._logNode.value = String(out || '').trim() || 'Сообщений Opera Proxy пока нет.';
                 this._logNode.scrollTop = this._logNode.scrollHeight;
@@ -379,7 +375,7 @@ return view.extend({
                     return new Promise(function(r) { window.setTimeout(r, 1500); });
                 })
                 .then(L.bind(function() {
-                    return Promise.all([ this.refreshStatus(), this.refreshLogs() ]);
+                    return this.refreshStatus();
                 }, this))
                 .then(L.bind(function() {
                     this.setActionState(false, 'Завершено действие: ' + action);
@@ -574,6 +570,7 @@ return view.extend({
                 '<button type="button" class="btn cbi-button cbi-button-remove"  data-opera-action="stop">Остановить</button>',
                 '<button type="button" class="btn cbi-button cbi-button-action"  data-opera-action="restart">Перезапустить</button>',
                 '<button type="button" class="btn cbi-button cbi-button-action important" data-opera-action="test">Проверить прокси</button>',
+                '<button type="button" class="btn cbi-button cbi-button-remove" data-opera-action="disable">Отключить автозапуск</button>',
                 '</div>',
                 '<div data-opera-action-state="1" style="margin-top:8px;min-height:1.4em;color:var(--text-color-medium,#6b7280)">Действий пока не было.</div>',
                 '<div data-opera-test-results="1" aria-live="polite"></div>'
@@ -641,18 +638,18 @@ return view.extend({
         o.rmempty     = true;
 
         o = s.option(form.Flag, 'api_proxy_builtin', 'Автоматический резервный доступ к API');
-        o.default = '1';
+        o.default = '0';
         o.rmempty = false;
         o.description = 'If direct SurfEasy API access or direct endpoint discovery fails, try public community proxy lists automatically.';
 
         o = s.option(form.Value, 'api_proxy_parallel', 'Параллельные проверки');
         o.datatype = 'uinteger';
-        o.default = '15';
+        o.default = '2';
         o.rmempty = false;
 
         o = s.option(form.Value, 'api_proxy_max', 'Лимит резервных прокси');
         o.datatype = 'uinteger';
-        o.default = '60';
+        o.default = '10';
         o.rmempty = false;
 
         o = s.option(form.Value, 'api_proxy_file', 'Файл списка прокси API');
@@ -721,13 +718,14 @@ return view.extend({
             var btnStop    = nodes.querySelector('[data-opera-action="stop"]');
             var btnRestart = nodes.querySelector('[data-opera-action="restart"]');
             var btnTest    = nodes.querySelector('[data-opera-action="test"]');
+            var btnDisable = nodes.querySelector('[data-opera-action="disable"]');
             var logBtn     = nodes.querySelector('[data-opera-refresh-logs="1"]');
 
             self._statusNode = nodes.querySelector('[data-opera-proxy-status="1"]');
             self._actionNode = nodes.querySelector('[data-opera-action-state="1"]');
             self._testNode = nodes.querySelector('[data-opera-test-results="1"]');
             self._logNode    = nodes.querySelector('[data-opera-logs="1"]');
-            self._buttons    = [btnStart, btnStop, btnRestart, btnTest];
+            self._buttons    = [btnStart, btnStop, btnRestart, btnTest, btnDisable];
 
             decorateHelp(nodes);
             makeSectionsCollapsible(nodes);
@@ -735,6 +733,20 @@ return view.extend({
             if (btnStart)   btnStart.addEventListener('click',   self.handleServiceAction('start'));
             if (btnStop)    btnStop.addEventListener('click',    self.handleServiceAction('stop'));
             if (btnRestart) btnRestart.addEventListener('click', self.handleServiceAction('restart'));
+            if (btnDisable) btnDisable.addEventListener('click', function(ev) {
+                ev.preventDefault();
+                self.setActionState(true, 'Отключаем службу...');
+                uci.set('opera-proxy', 'main', 'enabled', '0');
+                uci.save().then(function() { return callInitAction('opera-proxy', 'stop'); })
+                    .then(function() { return callInitAction('opera-proxy', 'disable'); })
+                    .then(function() {
+                        self.setActionState(false, 'Служба остановлена, автозапуск отключён.');
+                        return self.refreshStatus();
+                    }).catch(function(e) {
+                        self.setActionState(false, 'Не удалось отключить службу.');
+                        ui.addNotification(null, E('p', {}, String(e)));
+                    });
+            });
             if (btnTest)    btnTest.addEventListener('click',    self.handleProxyTest());
             if (logBtn) {
                 logBtn.addEventListener('click', function(ev) {
@@ -744,7 +756,7 @@ return view.extend({
             }
 
             self.refreshStatus();
-            self.refreshLogs();
+            // Journal is loaded on demand; large logs must not block every LuCI page render.
 
             if (!self._pollRegistered) {
                 poll.add(function() { return self.refreshStatus(); }, 8);
@@ -759,7 +771,7 @@ return view.extend({
         var self = this;
         return this.super('handleSaveApply', [ev, mode]).then(function(res) {
             return uci.load('opera-proxy').then(function() {
-                return Promise.all([ self.refreshStatus(), self.refreshLogs() ])
+                return self.refreshStatus()
                     .then(function() { return res; });
             });
         });
