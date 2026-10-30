@@ -40,19 +40,38 @@ func AfterWallClock(d time.Duration) <-chan time.Time {
 // RunTicker calls cb in a loop, waiting interval between successful calls
 // and retryInterval after a failure. It stops when ctx is cancelled.
 func RunTicker(ctx context.Context, interval, retryInterval time.Duration, cb func(context.Context) error) {
-	go func() {
-		var err error
-		for {
-			nextInterval := interval
-			if err != nil {
-				nextInterval = retryInterval
-			}
-			select {
-			case <-ctx.Done():
-				return
-			case <-AfterWallClock(nextInterval):
-				err = cb(ctx)
-			}
-		}
-	}()
+    go func() {
+        var err error
+        delay := retryInterval
+        if delay < time.Minute {
+            delay = time.Minute
+        }
+        for {
+            next := interval
+            if err != nil {
+                next = delay
+            }
+            timer := time.NewTimer(next)
+            select {
+            case <-ctx.Done():
+                timer.Stop()
+                return
+            case <-timer.C:
+            }
+            err = cb(ctx)
+            if err != nil {
+                if delay < 15*time.Minute {
+                    delay *= 2
+                    if delay > 15*time.Minute {
+                        delay = 15*time.Minute
+                    }
+                }
+            } else {
+                delay = retryInterval
+                if delay < time.Minute {
+                    delay = time.Minute
+                }
+            }
+        }
+    }()
 }
