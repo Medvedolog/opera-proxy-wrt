@@ -18,6 +18,7 @@ start_service() {
     local init_retries init_retry_interval refresh refresh_retry
     local server_selection server_selection_timeout
     local proxy api_proxy cafile fake_sni override_proxy_address
+    local api_proxy_builtin api_proxy_parallel api_proxy_max mem_limit_mb idle_timeout
     local bootstrap_dns
     local api_client_version api_client_type api_user_agent
 
@@ -31,8 +32,8 @@ start_service() {
     config_get_bool socks_mode      main socks_mode             1
     config_get verbosity            main verbosity              '20'
     config_get timeout              main timeout                '30s'
-    config_get init_retries         main init_retries           '0'
-    config_get init_retry_interval  main init_retry_interval    '5s'
+    config_get init_retries         main init_retries           '2'
+    config_get init_retry_interval  main init_retry_interval    '30s'
     config_get refresh              main refresh                '4h'
     config_get refresh_retry        main refresh_retry          '5s'
     config_get server_selection     main server_selection       'fastest'
@@ -42,6 +43,11 @@ start_service() {
     config_get cafile               main cafile                 ''
     config_get fake_sni             main fake_sni               ''
     config_get override_proxy_address main override_proxy_address ''
+    config_get_bool api_proxy_builtin main api_proxy_builtin 0
+    config_get api_proxy_parallel main api_proxy_parallel '2'
+    config_get api_proxy_max main api_proxy_max '10'
+    config_get mem_limit_mb main mem_limit_mb '0'
+    config_get idle_timeout main idle_timeout '0'
     config_get bootstrap_dns        main bootstrap_dns          'tls://9.9.9.9:853'
 
     # Browser spoofing — read from UCI, pass only when explicitly set
@@ -62,6 +68,12 @@ start_service() {
     procd_append_param command -server-selection           "$server_selection"
     procd_append_param command -server-selection-timeout   "$server_selection_timeout"
 
+    procd_append_param command -api-proxy-parallel "$api_proxy_parallel"
+    procd_append_param command -api-proxy-max "$api_proxy_max"
+    procd_append_param command -mem-limit-mb "$mem_limit_mb"
+    procd_append_param command -idle-timeout "$idle_timeout"
+    [ "$api_proxy_builtin" -eq 1 ] && procd_append_param command -api-proxy-builtin
+
     [ "$socks_mode" -eq 1 ]          && procd_append_param command -socks-mode
     [ -n "$bootstrap_dns" ]          && procd_append_param command -bootstrap-dns          "$bootstrap_dns"
     [ -n "$proxy" ]                  && procd_append_param command -proxy                  "$proxy"
@@ -76,8 +88,9 @@ start_service() {
     [ -n "$api_user_agent" ]         && procd_append_param command -api-user-agent        "$api_user_agent"
 
     procd_set_param env OPERA_PROXY_NATIVE_SYSLOG=1
-    procd_set_param respawn 3600 5 5
-    procd_set_param stdout 1
+    # Do not restart a failing network-dependent client in a tight procd loop.
+    # Manual start/restart remains available through LuCI.
+    procd_set_param stdout 0
     procd_set_param stderr 1
     procd_close_instance
 }
