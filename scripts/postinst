@@ -3,8 +3,16 @@ set -e
 
 [ -n "${IPKG_INSTROOT}" ] && exit 0
 
-/etc/init.d/opera-proxy enable  >/dev/null 2>&1 || true
-/etc/init.d/opera-proxy restart >/dev/null 2>&1 || /etc/init.d/opera-proxy start >/dev/null 2>&1 || true
-/etc/init.d/rpcd reload         >/dev/null 2>&1 || true
+# Respect UCI enabled flag on fresh installs and upgrades.
+# Do not silently re-enable an emergency-disabled service.
+enabled="$(uci -q get opera-proxy.main.enabled 2>/dev/null || echo 0)"
+if [ "$enabled" = '1' ]; then
+    /etc/init.d/opera-proxy enable  >/dev/null 2>&1 || true
+    /etc/init.d/opera-proxy restart >/dev/null 2>&1 || true
+else
+    /etc/init.d/opera-proxy stop    >/dev/null 2>&1 || true
+    /etc/init.d/opera-proxy disable >/dev/null 2>&1 || true
+fi
+/etc/init.d/rpcd reload >/dev/null 2>&1 || true
 rm -f /tmp/luci-indexcache /tmp/luci-modulecache
 exit 0
