@@ -23,12 +23,23 @@ jobs:
         run: |
           set -euo pipefail
           ref="refs/tags/v1.30.0-6"
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-6" >/dev/null 2>&1; then
-            echo "::error::Tag v1.30.0-6 already exists; refusing to overwrite."
-            exit 1
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-6" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -n "$existing" ]; then
+            if [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "::error::Existing tag points to another commit: $existing"
+              exit 1
+            fi
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="$ref" -f sha="$GITHUB_SHA"
           fi
-          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f ref="$ref" -f sha="$GITHUB_SHA"
-          # Tag creation using GITHUB_TOKEN does not fire a push-tag workflow.
-          # workflow_dispatch is explicitly allowed to trigger another workflow.
-          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref v1.30.0-6
+          # Tag creation with GITHUB_TOKEN does not trigger push-tag workflows.
+          # workflow_dispatch can trigger the signed tag pipeline explicitly.
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref v1.30.0-6; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Could not start signed tag pipeline."
+          exit 1
