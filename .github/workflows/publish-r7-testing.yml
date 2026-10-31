@@ -1,0 +1,45 @@
+name: Publish r7 testing release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/releases/v1.30.0-7.md'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  dispatch-tag-build:
+    name: Create fixed testing tag and run signed release pipeline
+    if: github.repository == 'Medvedolog/opera-proxy-wrt'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure testing tag points at this merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="refs/tags/v1.30.0-7"
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.30.0-7" --jq '.object.sha // empty' 2>/dev/null || true)"
+          if [[ "$existing" =~ ^[a-f0-9]{40}$ ]]; then
+            if [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "::error::Existing tag points to another commit: $existing"
+              exit 1
+            fi
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="$ref" -f sha="$GITHUB_SHA"
+          fi
+          # Tag creation with GITHUB_TOKEN does not trigger push-tag workflows.
+          # workflow_dispatch can trigger the signed tag pipeline explicitly.
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref v1.30.0-7; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Could not start signed tag pipeline."
+          exit 1
