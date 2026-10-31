@@ -2,7 +2,7 @@ name: OpenWrt owfeed CI
 
 on:
   push:
-    branches: [master, dev/ru-resilience, dev/trim-target-matrix, dev/r5-diagnostics, dev/r6-low-connectivity-safety]
+    branches: [master, dev/ru-resilience, dev/trim-target-matrix, dev/r5-diagnostics, dev/r6-low-connectivity-safety, dev/r7-upstream-go-20261022]
     tags: ['v[0-9]*', '[0-9]*']
   pull_request:
   workflow_dispatch:
