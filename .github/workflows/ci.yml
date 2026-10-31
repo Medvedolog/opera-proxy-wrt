@@ -177,10 +177,10 @@ jobs:
       artifact: opera-proxy-owfeed-packages
       verify-with: keys/opera-proxy-release.pub
 
-  mark-r6-prerelease:
-    name: Mark r6 as requiring testing
+  mark-r7-prerelease:
+    name: Mark r7 as requiring testing
     needs: [release]
-    if: github.ref == 'refs/tags/v1.30.0-6'
+    if: github.ref == 'refs/tags/v1.30.0-7'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -190,8 +190,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit v1.30.0-6 \
+          gh release edit v1.30.0-7 \
             --repo "$GITHUB_REPOSITORY" \
             --prerelease \
-            --title "v1.30.0-6 — Требует тестирования" \
-            --notes-file docs/releases/v1.30.0-6.md
+            --title "v1.30.0-7 — Требует тестирования" \
+            --notes-file docs/releases/v1.30.0-7.md
